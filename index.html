@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hangtime Tracker</title>
+<meta name="theme-color" content="#13213C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hangtime">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow working column with a sticky tab bar; every tab puts its entry form above a running log. */
+:root {
+  --bg: #EEF1F6;
+  --surface: #FFFFFF;
+  --ink: #13213C;
+  --muted: #56637F;
+  --line: #D3DAE6;
+  --accent: #F5B800;
+  --on-accent: #13213C;
+  --accent-text: #7A5A00;
+  --danger: #B3261E;
+  --good: #1B7F55;
+  --font-display: 'Bricolage Grotesque', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1628; --surface: #15233F; --ink: #E9EFFA; --muted: #9BA9C7; --line: #263757;
+    --accent-text: #F5B800; --danger: #FF8A80; --good: #6FD3A4; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1628; --surface: #15233F; --ink: #E9EFFA; --muted: #9BA9C7; --line: #263757;
+  --accent-text: #F5B800; --danger: #FF8A80; --good: #6FD3A4; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  -webkit-tap-highlight-color: transparent;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+.wrap { max-width: 760px; margin: 0 auto; }
+header { padding: 20px 0 14px; }
+h1 { margin: 0; font: 700 32px/1.1 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+h2 { margin: 0 0 12px; font: 700 18px/1.2 var(--font-display); letter-spacing: -0.01em; }
+h3 { margin: 0; font: 700 17px/1.25 var(--font-display); }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+
+nav.tabs {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; gap: 2px; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.tab {
+  flex: 1; padding: 12px 4px 10px; border: 0; border-bottom: 3px solid transparent; background: transparent;
+  color: var(--muted); font: 600 15px var(--font-display); cursor: pointer;
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:focus-visible, .btn:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { display: grid; gap: 20px; padding-top: 22px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 14px; }
+.card p { margin: 0; }
+.banner { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--muted); }
+
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+label, legend { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); padding: 0; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 6px; }
+/* 16px inputs stop iOS from zooming in on focus */
+input[type=text], input[type=date], input[type=number], textarea, select {
+  font: 16px/1.4 var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 10px; width: 100%; min-width: 0; -webkit-appearance: none; appearance: none;
+}
+input[type=date] { min-height: 42px; }
+textarea { resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+label.check { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 15px; }
+label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+.rating { display: flex; gap: 6px; flex-wrap: wrap; }
+.rating label { position: relative; display: block; flex: 1 1 56px; }
+.rating input { position: absolute; opacity: 0; inset: 0; }
+.rating span {
+  display: grid; place-items: center; padding: 8px 4px; gap: 0;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink);
+  font-weight: 600; cursor: pointer; line-height: 1.2;
+}
+.rating span small { font-size: 11px; font-weight: 500; color: var(--muted); }
+.rating input:checked + span { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+.rating input:checked + span small { color: var(--on-accent); }
+.rating input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.teen-checks { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); min-height: 1em; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  font: 600 15px var(--font-body); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn.small { padding: 7px 11px; font-size: 14px; }
+.btn.danger { color: var(--danger); }
+.btn.danger.confirm { background: var(--danger); color: var(--bg); border-color: transparent; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+.log { display: grid; gap: 12px; }
+.log-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.log-head h2 { margin: 0; }
+.entry { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.entry-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.entry p { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.entry .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; white-space: normal; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.pill.score { background: var(--accent); color: var(--on-accent); border-color: transparent; font-variant-numeric: tabular-nums; }
+.entry-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 22px 18px; color: var(--muted); text-align: center; }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: stretch; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.stat b { font: 700 30px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.stat.wide { grid-column: 1 / -1; }
+.spark { width: 100%; height: auto; max-width: 420px; display: block; }
+.spark .grid { stroke: var(--line); stroke-width: 1; }
+.spark .ax { fill: var(--muted); font: 500 10px var(--font-body); }
+.spark .line { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark .dot { fill: var(--accent); stroke: var(--ink); stroke-width: 1.5; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font: 600 13px var(--font-body); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: transparent; }
+
+details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--accent-text); }
+.notes { display: grid; gap: 8px; margin-top: 8px; }
+.note { border-left: 3px solid var(--line); padding-left: 10px; }
+.note time { font-size: 12px; color: var(--muted); display: block; }
+.note-add { display: flex; gap: 8px; }
+.note-add input { flex: 1; }
+
+.status-line { font-size: 14px; color: var(--muted); }
+.status-line.warn { color: var(--danger); font-weight: 600; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px;
+  font-weight: 500; max-width: calc(100vw - 32px); box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Hangtime Tracker</h1>
+    <p class="sub">Wednesdays, 3:15–5:15pm. Everything is saved on this phone only.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-weeks" data-tab="weeks" aria-selected="true">Weeks</button>
+    <button class="tab" role="tab" id="tab-teens" data-tab="teens" aria-selected="false">Teens</button>
+    <button class="tab" role="tab" id="tab-messages" data-tab="messages" aria-selected="false">Lessons</button>
+    <button class="tab" role="tab" id="tab-backup" data-tab="backup" aria-selected="false">Backup</button>
+  </nav>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section id="panel-weeks" class="panel" role="tabpanel" aria-labelledby="tab-weeks">
+    <div id="summary" class="summary"></div>
+
+    <form id="wk-form" class="card" novalidate>
+      <h2 id="wk-title">Log a Wednesday</h2>
+      <div class="fields">
+        <label for="wk-date">Date<input type="date" id="wk-date" required></label>
+        <label for="wk-kids">Kids who came<input type="number" id="wk-kids" min="0" inputmode="numeric"></label>
+      </div>
+      <fieldset>
+        <legend>How was Hangtime?</legend>
+        <div class="rating" id="wk-rating"></div>
+      </fieldset>
+      <label class="check" for="wk-taught"><input type="checkbox" id="wk-taught"> I taught this week</label>
+      <label for="wk-good">What went well<textarea id="wk-good" rows="2"></textarea></label>
+      <label for="wk-improve">What to change next time<textarea id="wk-improve" rows="2"></textarea></label>
+      <fieldset>
+        <legend>Teens who helped</legend>
+        <div id="wk-teens" class="teen-checks"></div>
+      </fieldset>
+      <p class="hint" id="wk-hint"></p>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="wk-save">Save week</button>
+        <button class="btn" type="button" id="wk-cancel" hidden>Cancel edit</button>
+      </div>
+    </form>
+
+    <div class="log">
+      <div class="log-head"><h2>Past weeks</h2></div>
+      <div id="wk-log" class="log"></div>
+    </div>
+  </section>
+
+  <section id="panel-teens" class="panel" role="tabpanel" aria-labelledby="tab-teens" hidden>
+    <form id="tn-form" class="card" novalidate>
+      <h2 id="tn-title">Add a teen volunteer</h2>
+      <div class="fields">
+        <label for="tn-name">Name<input type="text" id="tn-name" autocomplete="off" required></label>
+        <label for="tn-focus">Growing in<input type="text" id="tn-focus" autocomplete="off" placeholder="e.g. leading a small group"></label>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="tn-save">Add teen</button>
+        <button class="btn" type="button" id="tn-cancel" hidden>Cancel edit</button>
+      </div>
+    </form>
+    <div class="log">
+      <div class="log-head"><h2>Your team</h2></div>
+      <div id="tn-log" class="log"></div>
+    </div>
+  </section>
+
+  <section id="panel-messages" class="panel" role="tabpanel" aria-labelledby="tab-messages" hidden>
+    <form id="ms-form" class="card" novalidate>
+      <h2 id="ms-title">Add a sermon or lesson</h2>
+      <div class="fields">
+        <label for="ms-title-in">Title<input type="text" id="ms-title-in" autocomplete="off" required></label>
+        <label for="ms-passage">Passage<input type="text" id="ms-passage" autocomplete="off" placeholder="e.g. Matthew 14:22–32"></label>
+        <label for="ms-kind">Type<select id="ms-kind"></select></label>
+        <label for="ms-when">When<input type="text" id="ms-when" autocomplete="off" placeholder="e.g. Nov 4, or July 2026"></label>
+      </div>
+      <label for="ms-point">Main point<textarea id="ms-point" rows="2"></textarea></label>
+      <label for="ms-activity">Illustration or activity<textarea id="ms-activity" rows="2"></textarea></label>
+      <label for="ms-notes">Notes<textarea id="ms-notes" rows="2"></textarea></label>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="ms-save">Save</button>
+        <button class="btn" type="button" id="ms-cancel" hidden>Cancel edit</button>
+      </div>
+    </form>
+    <div class="log">
+      <div class="log-head"><h2>Library</h2><div id="ms-chips" class="chips"></div></div>
+      <div id="ms-log" class="log"></div>
+    </div>
+  </section>
+
+  <section id="panel-backup" class="panel" role="tabpanel" aria-labelledby="tab-backup" hidden>
+    <div class="card">
+      <h2>Save a backup</h2>
+      <p>Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.</p>
+      <p id="bk-status" class="status-line"></p>
+      <div class="actions"><button class="btn primary" type="button" id="bk-export">Save backup file</button></div>
+    </div>
+    <div class="card">
+      <h2>Load a backup</h2>
+      <p>Pick a backup file to bring its entries into this app. Entries already here are kept. If an entry is in both places, the file's copy wins.</p>
+      <input type="file" id="bk-file" accept=".json,application/json" hidden>
+      <div class="actions"><button class="btn" type="button" id="bk-import">Choose backup file</button></div>
+    </div>
+    <div class="card">
+      <h2>On this phone</h2>
+      <p id="bk-counts" class="status-line"></p>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
+  var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages'];
+  var STORE_KEY = 'hangtime-tracker-v1';
+  var BACKUP_KEY = 'hangtime-last-backup';
+
+  /* ---------- local store: same shape as the old shared database, kept in this phone's storage ---------- */
+  function newId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
+  var store = (function () {
+    var state = { teens: {}, weeks: {}, messages: {} };
+    var listeners = { teens: [], weeks: [], messages: [] };
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        COLLECTIONS.forEach(function (c) { if (parsed[c] && typeof parsed[c] === 'object') state[c] = parsed[c]; });
+      }
+    } catch (e) { /* first run or unreadable storage: start empty */ }
+
+    function persist() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+      catch (e) { var err = new Error('quota'); err.code = 'quota_exceeded'; throw err; }
+    }
+    function snap(c) {
+      return { docs: Object.keys(state[c]).map(function (id) {
+        return { id: id, data: function () { return JSON.parse(JSON.stringify(state[c][id])); } };
+      }) };
+    }
+    function notify(c) { listeners[c].forEach(function (cb) { cb(snap(c)); }); }
+    function write(c, fn) {
+      var before = JSON.stringify(state[c]);
+      fn();
+      try { persist(); }
+      catch (e) { state[c] = JSON.parse(before); throw e; }
+      notify(c);
+    }
+    function docRef(c, id) {
+      return {
+        set: function (data) { return Promise.resolve().then(function () { write(c, function () { state[c][id] = JSON.parse(JSON.stringify(data)); }); }); },
+        update: function (data) { return Promise.resolve().then(function () { write(c, function () { state[c][id] = Object.assign({}, state[c][id] || {}, JSON.parse(JSON.stringify(data))); }); }); },
+        delete: function () { return Promise.resolve().then(function () { write(c, function () { delete state[c][id]; }); }); }
+      };
+    }
+    return {
+      doc: function (path) { var p = path.split('/'); return docRef(p[0], p[1]); },
+      collection: function (c) {
+        return {
+          doc: function () { return docRef(c, newId()); },
+          onSnapshot: function (cb) { listeners[c].push(cb); cb(snap(c)); }
+        };
+      },
+      dump: function () { return JSON.parse(JSON.stringify(state)); },
+      merge: function (incoming) {
+        var prev = JSON.stringify(state);
+        COLLECTIONS.forEach(function (c) { Object.assign(state[c], incoming[c] || {}); });
+        try { persist(); }
+        catch (e) { state = JSON.parse(prev); throw e; }
+        COLLECTIONS.forEach(notify);
+      }
+    };
+  })();
+
+  // Ask the phone not to clear this app's storage when space runs low.
+  if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(function () {}); }
+
+  var db = store;
+  var teens = [], weeks = [], msgs = [];
+  var presentSel = new Set();
+  var editingWeek = null, editingTeen = null, editingMsg = null;
+  var filter = 'All';
+  var loaded = { teens: false, weeks: false, messages: false };
+
+  function $(id) { return document.getElementById(id); }
+
+  function el(tag, props) {
+    var e = document.createElement(tag);
+    props = props || {};
+    Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v === false || v == null) return;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), v);
+      else if (v === true) e.setAttribute(k, '');
+      else e.setAttribute(k, v);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = [].concat(arguments[i]);
+      kids.forEach(function (c) {
+        if (c == null || c === false) return;
+        e.append(c.nodeType ? c : document.createTextNode(String(c)));
+      });
+    }
+    return e;
+  }
+
+  function iso(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function lastWednesday() {
+    var d = new Date();
+    d.setDate(d.getDate() - ((d.getDay() - 3 + 7) % 7));
+    return iso(d);
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    var p = s.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, 3500);
+  }
+
+  function errText(e) {
+    var c = e && e.code;
+    if (c === 'quota_exceeded') return 'Phone storage for this app is full. Delete some old entries to add new ones.';
+    return 'Could not save. Try again in a moment.';
+  }
+  async function attempt(fn, okMsg) {
+    try { await fn(); if (okMsg) toast(okMsg); return true; }
+    catch (e) { toast(errText(e)); return false; }
+  }
+
+  function armDelete(btn, action) {
+    btn.addEventListener('click', function () {
+      if (btn.dataset.armed) { action(); return; }
+      btn.dataset.armed = '1';
+      btn.textContent = 'Confirm delete';
+      btn.classList.add('confirm');
+      setTimeout(function () {
+        if (btn.isConnected) {
+          delete btn.dataset.armed;
+          btn.textContent = 'Delete';
+          btn.classList.remove('confirm');
+        }
+      }, 4000);
+    });
+  }
+
+  /* ---------- tabs ---------- */
+  var TABS = ['weeks', 'teens', 'messages', 'backup'];
+  function showTab(name) {
+    TABS.forEach(function (n) {
+      $('panel-' + n).hidden = n !== name;
+      $('tab-' + n).setAttribute('aria-selected', n === name ? 'true' : 'false');
+    });
+    if (name === 'backup') renderBackup();
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.addEventListener('click', function () { showTab(b.dataset.tab); });
+  });
+  var startTab = (location.hash || '').replace('#', '');
+  if (TABS.indexOf(startTab) > -1) showTab(startTab);
+
+  /* ---------- weeks ---------- */
+  function buildRating() {
+    var box = $('wk-rating');
+    box.textContent = '';
+    for (var i = 1; i <= 5; i++) {
+      box.append(el('label', {},
+        el('input', { type: 'radio', name: 'rating', value: String(i) }),
+        el('span', {}, String(i), el('small', { text: LABELS[i - 1] }))
+      ));
+    }
+  }
+
+  function sortedWeeksAsc() {
+    return weeks.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  }
+
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+
+  function sparkline(vals) {
+    var W = 280, H = 76, pl = 22, pr = 10, pt = 10, pb = 10;
+    var n = vals.length;
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'spark', role: 'img', 'aria-label': 'Hangtime ratings over the last ' + n + ' weeks' });
+    function x(i) { return n === 1 ? pl + (W - pl - pr) / 2 : pl + i * (W - pl - pr) / (n - 1); }
+    function y(v) { return pt + (5 - v) * (H - pt - pb) / 4; }
+    [1, 3, 5].forEach(function (v) {
+      svg.append(svgEl('line', { class: 'grid', x1: pl, x2: W - pr, y1: y(v), y2: y(v) }));
+      var t = svgEl('text', { class: 'ax', x: 2, y: y(v) + 3 });
+      t.textContent = String(v);
+      svg.append(t);
+    });
+    if (n > 1) {
+      svg.append(svgEl('polyline', { class: 'line', points: vals.map(function (v, i) { return x(i) + ',' + y(v); }).join(' ') }));
+    }
+    vals.forEach(function (v, i) {
+      svg.append(svgEl('circle', { class: 'dot', cx: x(i), cy: y(v), r: i === n - 1 ? 5 : 3 }));
+    });
+    return svg;
+  }
+
+  function renderSummary() {
+    var box = $('summary');
+    box.textContent = '';
+    if (!weeks.length) {
+      box.append(el('div', { class: 'empty stat wide' },
+        loaded.weeks ? 'Your ratings will chart here. Log your first Wednesday below.' : 'Loading…'));
+      return;
+    }
+    var asc = sortedWeeksAsc();
+    var recent = asc.slice(-8);
+    var avg = recent.reduce(function (s, w) { return s + w.rating; }, 0) / recent.length;
+    var last = asc[asc.length - 1];
+    box.append(
+      el('div', { class: 'stat' }, el('b', { text: String(weeks.length) }), el('span', { text: 'weeks logged' })),
+      el('div', { class: 'stat' }, el('b', { text: avg.toFixed(1) }), el('span', { text: 'average, last ' + recent.length + ' weeks' })),
+      el('div', { class: 'stat' }, el('b', { text: last.rating + '/5' }), el('span', { text: 'latest, ' + fmtDate(last.date) })),
+      el('div', { class: 'stat wide' }, sparkline(asc.slice(-12).map(function (w) { return w.rating; })), el('span', { text: 'Hangtime rating, newest on the right' }))
+    );
+  }
+
+  function renderWeekTeens() {
+    var box = $('wk-teens');
+    box.textContent = '';
+    if (!teens.length) {
+      box.append(el('span', { class: 'hint', text: 'Add your teens on the Teens tab to take attendance.' }));
+      return;
+    }
+    teens.forEach(function (t) {
+      var cb = el('input', { type: 'checkbox', id: 'wk-t-' + t.id });
+      cb.checked = presentSel.has(t.id);
+      cb.addEventListener('change', function () {
+        if (cb.checked) presentSel.add(t.id); else presentSel.delete(t.id);
+      });
+      box.append(el('label', { class: 'check', for: 'wk-t-' + t.id }, cb, t.name));
+    });
+  }
+
+  function renderWeeks() {
+    var box = $('wk-log');
+    box.textContent = '';
+    if (!weeks.length) {
+      box.append(el('div', { class: 'empty', text: loaded.weeks ? 'No weeks yet. Each Wednesday you log shows up here.' : 'Loading…' }));
+      return;
+    }
+    weeks.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).forEach(function (w) {
+      var names = (w.present || []).map(function (id) {
+        var t = teens.find(function (x) { return x.id === id; });
+        return t ? t.name : null;
+      }).filter(Boolean);
+      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
+      armDelete(del, function () { attempt(function () { return db.doc('weeks/' + w.date).delete(); }, 'Deleted'); });
+      box.append(el('article', { class: 'entry' },
+        el('div', { class: 'entry-top' },
+          el('h3', { text: fmtDate(w.date) }),
+          el('div', { class: 'meta' },
+            el('span', { class: 'pill score', text: w.rating + '/5 ' + LABELS[w.rating - 1] }),
+            w.kids != null ? el('span', { class: 'pill', text: w.kids + ' kids' }) : null,
+            w.taught ? el('span', { class: 'pill', text: 'I taught' }) : null)),
+        names.length ? el('p', {}, el('span', { class: 'lbl', text: 'Teens who helped' }), names.join(', ')) : null,
+        w.good ? el('p', {}, el('span', { class: 'lbl', text: 'Went well' }), w.good) : null,
+        w.improve ? el('p', {}, el('span', { class: 'lbl', text: 'Change next time' }), w.improve) : null,
+        el('div', { class: 'entry-actions' },
+          el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadWeek(w); } }), del)
+      ));
+    });
+  }
+
+  function updateWeekHint() {
+    var d = $('wk-date').value;
+    var clash = d && d !== editingWeek && weeks.some(function (w) { return w.date === d; });
+    $('wk-hint').textContent = clash ? 'A week is already logged for this date. Saving replaces it.' : '';
+  }
+
+  function resetWeekForm() {
+    editingWeek = null;
+    presentSel = new Set();
+    $('wk-title').textContent = 'Log a Wednesday';
+    $('wk-save').textContent = 'Save week';
+    $('wk-cancel').hidden = true;
+    $('wk-date').value = lastWednesday();
+    $('wk-kids').value = '';
+    $('wk-taught').checked = false;
+    $('wk-good').value = '';
+    $('wk-improve').value = '';
+    document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = false; });
+    renderWeekTeens();
+    updateWeekHint();
+  }
+
+  function loadWeek(w) {
+    editingWeek = w.date;
+    presentSel = new Set(w.present || []);
+    $('wk-title').textContent = 'Edit ' + fmtDate(w.date);
+    $('wk-save').textContent = 'Update week';
+    $('wk-cancel').hidden = false;
+    $('wk-date').value = w.date;
+    $('wk-kids').value = w.kids == null ? '' : w.kids;
+    $('wk-taught').checked = !!w.taught;
+    $('wk-good').value = w.good || '';
+    $('wk-improve').value = w.improve || '';
+    document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = Number(r.value) === w.rating; });
+    renderWeekTeens();
+    updateWeekHint();
+    $('wk-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('wk-date').addEventListener('change', updateWeekHint);
+  $('wk-cancel').addEventListener('click', resetWeekForm);
+  $('wk-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var date = $('wk-date').value;
+    var checked = document.querySelector('input[name=rating]:checked');
+    var rating = checked ? Number(checked.value) : 0;
+    if (!date) { toast('Pick a date.'); return; }
+    if (!rating) { toast('Choose a rating from 1 to 5.'); return; }
+    var kidsRaw = $('wk-kids').value;
+    var data = {
+      date: date,
+      rating: rating,
+      kids: kidsRaw === '' ? null : Number(kidsRaw),
+      taught: $('wk-taught').checked,
+      good: $('wk-good').value.trim(),
+      improve: $('wk-improve').value.trim(),
+      present: Array.from(presentSel)
+    };
+    var oldId = editingWeek;
+    var ok = await attempt(async function () {
+      await db.doc('weeks/' + date).set(data);
+      if (oldId && oldId !== date) await db.doc('weeks/' + oldId).delete();
+    }, 'Saved ' + fmtDate(date));
+    if (ok) resetWeekForm();
+  });
+
+  /* ---------- teens ---------- */
+  function renderTeens() {
+    var box = $('tn-log');
+    box.textContent = '';
+    if (!teens.length) {
+      box.append(el('div', { class: 'empty', text: loaded.teens ? 'No teens yet. Add the volunteers you coordinate, then take attendance each week.' : 'Loading…' }));
+      return;
+    }
+    teens.forEach(function (t) {
+      var came = weeks.filter(function (w) { return (w.present || []).indexOf(t.id) > -1; }).length;
+      var notes = t.notes || [];
+      var noteInput = el('input', { type: 'text', id: 'nt-' + t.id, 'aria-label': 'New note about ' + t.name, placeholder: 'Add a note', autocomplete: 'off' });
+      async function addNote() {
+        var v = noteInput.value.trim();
+        if (!v) return;
+        var next = [{ d: iso(new Date()), t: v }].concat(notes);
+        var ok = await attempt(function () { return db.doc('teens/' + t.id).update({ notes: next }); }, 'Note added');
+        if (ok) noteInput.value = '';
+      }
+      noteInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addNote(); } });
+      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
+      armDelete(del, function () { attempt(function () { return db.doc('teens/' + t.id).delete(); }, 'Removed ' + t.name); });
+      function noteEl(n) { return el('div', { class: 'note' }, el('time', { text: fmtDate(n.d) }), el('span', { text: n.t })); }
+      box.append(el('article', { class: 'entry' },
+        el('div', { class: 'entry-top' },
+          el('h3', { text: t.name }),
+          el('div', { class: 'meta' }, el('span', { class: 'pill', text: came + ' of ' + weeks.length + ' logged weeks' }))),
+        t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
+        notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
+        notes.length > 1 ? el('details', {}, el('summary', { text: 'Earlier notes (' + (notes.length - 1) + ')' }), el('div', { class: 'notes' }, notes.slice(1).map(noteEl))) : null,
+        el('div', { class: 'note-add' }, noteInput, el('button', { class: 'btn small', type: 'button', text: 'Add note', onclick: addNote })),
+        el('div', { class: 'entry-actions' },
+          el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadTeen(t); } }), del)
+      ));
+    });
+  }
+
+  function resetTeenForm() {
+    editingTeen = null;
+    $('tn-title').textContent = 'Add a teen volunteer';
+    $('tn-save').textContent = 'Add teen';
+    $('tn-cancel').hidden = true;
+    $('tn-name').value = '';
+    $('tn-focus').value = '';
+  }
+  function loadTeen(t) {
+    editingTeen = t.id;
+    $('tn-title').textContent = 'Edit ' + t.name;
+    $('tn-save').textContent = 'Update teen';
+    $('tn-cancel').hidden = false;
+    $('tn-name').value = t.name;
+    $('tn-focus').value = t.focus || '';
+    $('tn-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('tn-cancel').addEventListener('click', resetTeenForm);
+  $('tn-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var name = $('tn-name').value.trim();
+    if (!name) { toast('Enter a name.'); return; }
+    var focus = $('tn-focus').value.trim();
+    var ok;
+    if (editingTeen) {
+      var id = editingTeen;
+      ok = await attempt(function () { return db.doc('teens/' + id).update({ name: name, focus: focus }); }, 'Updated ' + name);
+    } else {
+      ok = await attempt(function () { return db.collection('teens').doc().set({ name: name, focus: focus, notes: [], created: Date.now() }); }, 'Added ' + name);
+    }
+    if (ok) resetTeenForm();
+  });
+
+  /* ---------- sermons & lessons ---------- */
+  function buildKinds() {
+    var sel = $('ms-kind');
+    KINDS.forEach(function (k) { sel.append(el('option', { value: k, text: k })); });
+  }
+
+  function renderChips() {
+    var box = $('ms-chips');
+    box.textContent = '';
+    ['All'].concat(KINDS).forEach(function (k) {
+      box.append(el('button', {
+        class: 'chip', type: 'button', text: k, 'aria-pressed': filter === k ? 'true' : 'false',
+        onclick: function () { filter = k; renderChips(); renderMsgs(); }
+      }));
+    });
+  }
+
+  function renderMsgs() {
+    var box = $('ms-log');
+    box.textContent = '';
+    var list = msgs.filter(function (m) { return filter === 'All' || m.kind === filter; })
+      .sort(function (a, b) { return (b.created || 0) - (a.created || 0); });
+    if (!list.length) {
+      box.append(el('div', { class: 'empty', text: loaded.messages ? (msgs.length ? 'Nothing of this type yet.' : 'No messages yet. Add your first sermon or lesson above.') : 'Loading…' }));
+      return;
+    }
+    list.forEach(function (m) {
+      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
+      armDelete(del, function () { attempt(function () { return db.doc('messages/' + m.id).delete(); }, 'Deleted'); });
+      box.append(el('article', { class: 'entry' },
+        el('div', { class: 'entry-top' },
+          el('h3', { text: m.title }),
+          el('div', { class: 'meta' },
+            m.kind ? el('span', { class: 'pill', text: m.kind }) : null,
+            m.when ? el('span', { class: 'pill', text: m.when }) : null)),
+        m.passage ? el('p', {}, el('span', { class: 'lbl', text: 'Passage' }), m.passage) : null,
+        m.point ? el('p', {}, el('span', { class: 'lbl', text: 'Main point' }), m.point) : null,
+        m.activity ? el('p', {}, el('span', { class: 'lbl', text: 'Illustration or activity' }), m.activity) : null,
+        m.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), m.notes) : null,
+        el('div', { class: 'entry-actions' },
+          el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadMsg(m); } }), del)
+      ));
+    });
+  }
+
+  function resetMsgForm() {
+    editingMsg = null;
+    $('ms-title').textContent = 'Add a sermon or lesson';
+    $('ms-save').textContent = 'Save';
+    $('ms-cancel').hidden = true;
+    ['ms-title-in', 'ms-passage', 'ms-when', 'ms-point', 'ms-activity', 'ms-notes'].forEach(function (id) { $(id).value = ''; });
+    $('ms-kind').value = KINDS[0];
+  }
+  function loadMsg(m) {
+    editingMsg = m.id;
+    $('ms-title').textContent = 'Edit ' + m.title;
+    $('ms-save').textContent = 'Update';
+    $('ms-cancel').hidden = false;
+    $('ms-title-in').value = m.title || '';
+    $('ms-passage').value = m.passage || '';
+    $('ms-kind').value = KINDS.indexOf(m.kind) > -1 ? m.kind : KINDS[0];
+    $('ms-when').value = m.when || '';
+    $('ms-point').value = m.point || '';
+    $('ms-activity').value = m.activity || '';
+    $('ms-notes').value = m.notes || '';
+    $('ms-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('ms-cancel').addEventListener('click', resetMsgForm);
+  $('ms-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var title = $('ms-title-in').value.trim();
+    if (!title) { toast('Enter a title.'); return; }
+    var data = {
+      title: title,
+      passage: $('ms-passage').value.trim(),
+      kind: $('ms-kind').value,
+      when: $('ms-when').value.trim(),
+      point: $('ms-point').value.trim(),
+      activity: $('ms-activity').value.trim(),
+      notes: $('ms-notes').value.trim()
+    };
+    var ok;
+    if (editingMsg) {
+      var id = editingMsg;
+      ok = await attempt(function () { return db.doc('messages/' + id).update(data); }, 'Updated');
+    } else {
+      data.created = Date.now();
+      ok = await attempt(function () { return db.collection('messages').doc().set(data); }, 'Saved');
+    }
+    if (ok) resetMsgForm();
+  });
+
+  /* ---------- backup ---------- */
+  function lastBackup() {
+    try { return Number(localStorage.getItem(BACKUP_KEY)) || 0; } catch (e) { return 0; }
+  }
+
+  function renderBackup() {
+    var last = lastBackup();
+    var total = teens.length + weeks.length + msgs.length;
+    var days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+    var line = $('bk-status');
+    if (!last) {
+      line.textContent = total ? 'You have not saved a backup yet.' : 'Nothing to back up yet.';
+      line.className = 'status-line' + (total ? ' warn' : '');
+    } else {
+      line.textContent = 'Last backup: ' + new Date(last).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+        (days === 0 ? ' (today)' : ' (' + days + (days === 1 ? ' day' : ' days') + ' ago)');
+      line.className = 'status-line' + (days > 30 ? ' warn' : '');
+    }
+    $('bk-counts').textContent = weeks.length + (weeks.length === 1 ? ' week, ' : ' weeks, ') +
+      teens.length + (teens.length === 1 ? ' teen, ' : ' teens, ') +
+      msgs.length + (msgs.length === 1 ? ' sermon or lesson.' : ' sermons and lessons.');
+  }
+
+  function backupReminder() {
+    var total = teens.length + weeks.length + msgs.length;
+    var last = lastBackup();
+    if (total && (!last || Date.now() - last > 30 * 86400000)) {
+      banner(last ? 'It has been over a month since your last backup. Open the Backup tab to save one.' : 'Tip: save a backup from the Backup tab so your entries are safe if anything happens to this phone.');
+    }
+  }
+
+  $('bk-export').addEventListener('click', async function () {
+    var payload = Object.assign({ app: 'hangtime-tracker', version: 1, exported: new Date().toISOString() }, store.dump());
+    var name = 'hangtime-backup-' + iso(new Date()) + '.json';
+    var text = JSON.stringify(payload, null, 2);
+    var file = null;
+    try { file = new File([text], name, { type: 'application/json' }); } catch (e) { /* older browsers */ }
+    var saved = false;
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Hangtime backup' }); saved = true; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    if (!saved) {
+      var url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      var a = el('a', { href: url, download: name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    }
+    try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) { /* not critical */ }
+    $('banner').hidden = true;
+    renderBackup();
+    toast('Backup ready: ' + name);
+  });
+
+  $('bk-import').addEventListener('click', function () { $('bk-file').click(); });
+  $('bk-file').addEventListener('change', async function () {
+    var f = this.files && this.files[0];
+    this.value = '';
+    if (!f) return;
+    var data;
+    try { data = JSON.parse(await f.text()); } catch (e) { toast('That file is not a Hangtime backup.'); return; }
+    if (!data || data.app !== 'hangtime-tracker') { toast('That file is not a Hangtime backup.'); return; }
+    var incoming = {};
+    COLLECTIONS.forEach(function (c) { incoming[c] = data[c] && typeof data[c] === 'object' ? data[c] : {}; });
+    var n = COLLECTIONS.reduce(function (s, c) { return s + Object.keys(incoming[c]).length; }, 0);
+    if (!n) { toast('That backup is empty.'); return; }
+    if (!confirm('Bring ' + n + (n === 1 ? ' entry' : ' entries') + ' from this backup into the app?')) return;
+    try { store.merge(incoming); toast('Loaded ' + n + (n === 1 ? ' entry' : ' entries')); }
+    catch (e) { toast(errText(e)); }
+    renderBackup();
+  });
+
+  /* ---------- data ---------- */
+  function banner(text) {
+    var b = $('banner');
+    b.textContent = text;
+    b.hidden = false;
+  }
+
+  function toRows(snap) {
+    return snap.docs.map(function (d) { var o = d.data() || {}; o.id = d.id; return o; });
+  }
+
+  function start() {
+    db.collection('teens').onSnapshot(function (snap) {
+      teens = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+      loaded.teens = true;
+      renderTeens(); renderWeekTeens(); renderWeeks(); renderBackup();
+    });
+    db.collection('weeks').onSnapshot(function (snap) {
+      weeks = toRows(snap);
+      loaded.weeks = true;
+      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup();
+    });
+    db.collection('messages').onSnapshot(function (snap) {
+      msgs = toRows(snap);
+      loaded.messages = true;
+      renderMsgs(); renderBackup();
+    });
+    backupReminder();
+  }
+
+  function renderAll() { renderSummary(); renderWeekTeens(); renderWeeks(); renderTeens(); renderChips(); renderMsgs(); }
+
+  buildRating();
+  buildKinds();
+  resetWeekForm();
+  resetTeenForm();
+  resetMsgForm();
+  renderAll();
+  start();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
