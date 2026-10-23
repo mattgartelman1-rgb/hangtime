@@ -112,7 +112,16 @@ label.check input { width: 20px; height: 20px; accent-color: var(--accent); }
 .rating input:checked + span small { color: var(--on-accent); }
 .rating input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.teen-checks { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.teen-checks { display: grid; gap: 10px; }
+.teen-row { display: grid; gap: 6px; }
+.lead-rate { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-left: 28px; }
+.lead-rate .hint { min-height: 0; margin-right: 2px; }
+.lead-rate .chip { min-width: 40px; padding: 7px 0; text-align: center; font-size: 15px; }
+.lead-rate .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.lead { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--bg); }
+.lead b { font: 700 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.lead span { font-size: 13px; color: var(--muted); }
+.lead .spark { grid-column: 1 / -1; max-width: 320px; }
 .hint { margin: 0; font-size: 13px; color: var(--muted); min-height: 1em; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .btn {
@@ -206,7 +215,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <label for="wk-good">What went well<textarea id="wk-good" rows="2"></textarea></label>
       <label for="wk-improve">What to change next time<textarea id="wk-improve" rows="2"></textarea></label>
       <fieldset>
-        <legend>Teens who helped</legend>
+        <legend>Teens who helped, and how well each one led</legend>
         <div id="wk-teens" class="teen-checks"></div>
       </fieldset>
       <p class="hint" id="wk-hint"></p>
@@ -360,6 +369,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var db = store;
   var teens = [], weeks = [], msgs = [];
   var presentSel = new Set();
+  var leadSel = {};
+  var LEAD_LABELS = ['Struggled', 'Getting there', 'Solid', 'Strong', 'Outstanding'];
   var editingWeek = null, editingTeen = null, editingMsg = null;
   var filter = 'All';
   var loaded = { teens: false, weeks: false, messages: false };
@@ -475,10 +486,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     return e;
   }
 
-  function sparkline(vals) {
+  function sparkline(vals, label) {
     var W = 280, H = 76, pl = 22, pr = 10, pt = 10, pb = 10;
     var n = vals.length;
-    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'spark', role: 'img', 'aria-label': 'Hangtime ratings over the last ' + n + ' weeks' });
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'spark', role: 'img', 'aria-label': (label || 'Hangtime ratings') + ' over the last ' + n + ' weeks' });
     function x(i) { return n === 1 ? pl + (W - pl - pr) / 2 : pl + i * (W - pl - pr) / (n - 1); }
     function y(v) { return pt + (5 - v) * (H - pt - pb) / 4; }
     [1, 3, 5].forEach(function (v) {
@@ -526,11 +537,34 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     teens.forEach(function (t) {
       var cb = el('input', { type: 'checkbox', id: 'wk-t-' + t.id });
       cb.checked = presentSel.has(t.id);
+      var rate = el('div', { class: 'lead-rate', role: 'group', 'aria-label': 'How well ' + t.name + ' led' });
+      function drawRate() {
+        rate.textContent = '';
+        rate.hidden = !cb.checked;
+        rate.append(el('span', { class: 'hint', text: leadSel[t.id] ? LEAD_LABELS[leadSel[t.id] - 1] : 'Led:' }));
+        for (var i = 1; i <= 5; i++) {
+          (function (v) {
+            rate.append(el('button', {
+              class: 'chip', type: 'button', text: String(v), 'aria-pressed': leadSel[t.id] === v ? 'true' : 'false',
+              'aria-label': v + ', ' + LEAD_LABELS[v - 1],
+              // Tapping the chosen score again clears it.
+              onclick: function () { if (leadSel[t.id] === v) delete leadSel[t.id]; else leadSel[t.id] = v; drawRate(); }
+            }));
+          })(i);
+        }
+      }
       cb.addEventListener('change', function () {
-        if (cb.checked) presentSel.add(t.id); else presentSel.delete(t.id);
+        if (cb.checked) presentSel.add(t.id); else { presentSel.delete(t.id); delete leadSel[t.id]; }
+        drawRate();
       });
-      box.append(el('label', { class: 'check', for: 'wk-t-' + t.id }, cb, t.name));
+      drawRate();
+      box.append(el('div', { class: 'teen-row' }, el('label', { class: 'check', for: 'wk-t-' + t.id }, cb, t.name), rate));
     });
+  }
+
+  // A teen's leading scores, oldest first, from every logged week that rated them.
+  function leadHistory(id) {
+    return sortedWeeksAsc().filter(function (w) { return w.leads && w.leads[id]; }).map(function (w) { return w.leads[id]; });
   }
 
   function renderWeeks() {
@@ -543,7 +577,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     weeks.slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; }).forEach(function (w) {
       var names = (w.present || []).map(function (id) {
         var t = teens.find(function (x) { return x.id === id; });
-        return t ? t.name : null;
+        var r = w.leads && w.leads[id];
+        return t ? t.name + (r ? ' (' + r + '/5)' : '') : null;
       }).filter(Boolean);
       var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
       armDelete(del, function () { attempt(function () { return db.doc('weeks/' + w.date).delete(); }, 'Deleted'); });
@@ -572,6 +607,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   function resetWeekForm() {
     editingWeek = null;
     presentSel = new Set();
+    leadSel = {};
     $('wk-title').textContent = 'Log a Wednesday';
     $('wk-save').textContent = 'Save week';
     $('wk-cancel').hidden = true;
@@ -588,6 +624,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   function loadWeek(w) {
     editingWeek = w.date;
     presentSel = new Set(w.present || []);
+    leadSel = Object.assign({}, w.leads || {});
     $('wk-title').textContent = 'Edit ' + fmtDate(w.date);
     $('wk-save').textContent = 'Update week';
     $('wk-cancel').hidden = false;
@@ -619,8 +656,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       taught: $('wk-taught').checked,
       good: $('wk-good').value.trim(),
       improve: $('wk-improve').value.trim(),
-      present: Array.from(presentSel)
+      present: Array.from(presentSel),
+      leads: {}
     };
+    presentSel.forEach(function (id) { if (leadSel[id]) data.leads[id] = leadSel[id]; });
     var oldId = editingWeek;
     var ok = await attempt(async function () {
       await db.doc('weeks/' + date).set(data);
@@ -639,6 +678,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     }
     teens.forEach(function (t) {
       var came = weeks.filter(function (w) { return (w.present || []).indexOf(t.id) > -1; }).length;
+      var hist = leadHistory(t.id);
+      var recent = hist.slice(-8);
+      var score = recent.length ? recent.reduce(function (s, v) { return s + v; }, 0) / recent.length : null;
       var notes = t.notes || [];
       var noteInput = el('input', { type: 'text', id: 'nt-' + t.id, 'aria-label': 'New note about ' + t.name, placeholder: 'Add a note', autocomplete: 'off' });
       async function addNote() {
@@ -655,7 +697,15 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       box.append(el('article', { class: 'entry' },
         el('div', { class: 'entry-top' },
           el('h3', { text: t.name }),
-          el('div', { class: 'meta' }, el('span', { class: 'pill', text: came + ' of ' + weeks.length + ' logged weeks' }))),
+          el('div', { class: 'meta' },
+            score != null ? el('span', { class: 'pill score', text: score.toFixed(1) + ' leading' }) : null,
+            el('span', { class: 'pill', text: came + ' of ' + weeks.length + ' logged weeks' }))),
+        score != null
+          ? el('div', { class: 'lead' },
+              el('b', { text: score.toFixed(1) }),
+              el('span', { text: 'Leading score: average of ' + (recent.length === 1 ? 'their 1 rated week' : 'their last ' + recent.length + ' rated weeks') + '. Latest: ' + hist[hist.length - 1] + '/5, ' + LEAD_LABELS[hist[hist.length - 1] - 1] + '.' }),
+              hist.length > 1 ? sparkline(hist.slice(-12), t.name + "'s leading scores") : null)
+          : el('p', { class: 'hint', text: 'No leading score yet. Rate them when you log a Wednesday they help at.' }),
         t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
         notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
         notes.length > 1 ? el('details', {}, el('summary', { text: 'Earlier notes (' + (notes.length - 1) + ')' }), el('div', { class: 'notes' }, notes.slice(1).map(noteEl))) : null,
