@@ -1,5 +1,5 @@
 // Keeps the app working offline. Bump VERSION whenever the app files change so phones pick up the update.
-var VERSION = 'hangtime-v2';
+var VERSION = 'hangtime-v3';
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
