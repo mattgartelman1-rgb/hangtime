@@ -213,6 +213,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .door-kid[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .door-kid[aria-pressed="true"]::before { content: "✓ "; }
 .btn.big { width: 100%; padding: 14px; font-size: 17px; }
+.toolbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.picked { display: flex; flex-wrap: wrap; gap: 6px; }
+.picked .chip { display: inline-flex; align-items: center; gap: 6px; }
 .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
 .x:focus-visible { outline: 2px solid var(--accent); }
 .status-line.warn { color: var(--danger); font-weight: 600; }
@@ -238,7 +241,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     <button class="tab" role="tab" id="tab-plan" data-tab="plan" aria-selected="true">Plan</button>
     <button class="tab" role="tab" id="tab-weeks" data-tab="weeks" aria-selected="false">Weeks</button>
     <button class="tab" role="tab" id="tab-teens" data-tab="teens" aria-selected="false">People</button>
-    <button class="tab" role="tab" id="tab-messages" data-tab="messages" aria-selected="false">Lessons</button>
+    <button class="tab" role="tab" id="tab-messages" data-tab="messages" aria-selected="false">Library</button>
     <button class="tab" role="tab" id="tab-ministry" data-tab="ministry" aria-selected="false">Ministry</button>
   </nav>
 
@@ -255,7 +258,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <label for="pl-lesson">Lesson<select id="pl-lesson"></select></label>
       <p class="hint" id="pl-lesson-info"></p>
       <label for="pl-arrive">When kids arrive<textarea id="pl-arrive" rows="2" placeholder="e.g. Teens at the door, sign-in table, open gym until 3:30"></textarea></label>
-      <label for="pl-games">Games and activities<textarea id="pl-games" rows="2"></textarea></label>
+      <fieldset>
+        <legend>Games</legend>
+        <div id="pl-gamelist" class="picked"></div>
+        <select id="pl-gamepick" aria-label="Add a game from your library"></select>
+        <textarea id="pl-games" rows="2" placeholder="Other games, activities or notes" aria-label="Other games, activities or notes"></textarea>
+      </fieldset>
       <fieldset>
         <legend>Teen jobs</legend>
         <div id="pl-roles" class="role-list"></div>
@@ -307,6 +315,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <fieldset>
         <legend>Teens who helped, and how well each one led</legend>
         <div id="wk-teens" class="teen-checks"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Games played, and how much the kids liked them</legend>
+        <div id="wk-games" class="teen-checks"></div>
       </fieldset>
       <p class="hint" id="wk-hint"></p>
       <div class="actions">
@@ -367,6 +379,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   </section>
 
   <section id="panel-messages" class="panel" role="tabpanel" aria-labelledby="tab-messages" hidden>
+    <div class="subnav chips">
+      <button class="chip" type="button" id="lib-show-lessons" aria-pressed="true">Lessons</button>
+      <button class="chip" type="button" id="lib-show-games" aria-pressed="false">Games</button>
+    </div>
+    <div id="lib-lessons" class="panel" style="padding-top:0">
     <form id="ms-form" class="card" novalidate>
       <h2 id="ms-title">Add a sermon or lesson</h2>
       <div class="fields">
@@ -384,8 +401,40 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       </div>
     </form>
     <div class="log">
-      <div class="log-head"><h2>Library</h2><div id="ms-chips" class="chips"></div></div>
+      <div class="log-head"><h2>Lessons</h2><div id="ms-chips" class="chips"></div></div>
       <div id="ms-log" class="log"></div>
+    </div>
+    </div>
+    <div id="lib-games" class="panel" style="padding-top:0" hidden>
+      <form id="gm-form" class="card" novalidate>
+        <h2 id="gm-title">Add a game</h2>
+        <div class="fields">
+          <label for="gm-name">Name<input type="text" id="gm-name" autocomplete="off" required></label>
+          <label for="gm-kind">Type<select id="gm-kind"></select></label>
+          <label for="gm-place">Where<select id="gm-place"></select></label>
+          <label for="gm-supplies">Supplies<input type="text" id="gm-supplies" autocomplete="off" placeholder="e.g. 2 bandanas, cones"></label>
+        </div>
+        <label for="gm-how">How to play<textarea id="gm-how" rows="3"></textarea></label>
+        <label for="gm-tie">Bible tie-in<textarea id="gm-tie" rows="2" placeholder="Optional: a verse or point the game can lead into"></textarea></label>
+        <label for="gm-notes">Notes<textarea id="gm-notes" rows="2"></textarea></label>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="gm-save">Add game</button>
+          <button class="btn" type="button" id="gm-cancel" hidden>Cancel edit</button>
+        </div>
+      </form>
+      <div class="log">
+        <div class="log-head"><h2>Games</h2><button class="btn small" type="button" id="gm-random">Surprise me</button></div>
+        <div class="toolbar">
+          <input type="text" id="gm-search" autocomplete="off" placeholder="Search games" aria-label="Search games">
+          <select id="gm-sort" aria-label="Sort games">
+            <option value="fun">Kids' favorites</option>
+            <option value="stale">Not played lately</option>
+            <option value="az">A to Z</option>
+          </select>
+        </div>
+        <div id="gm-chips" class="chips"></div>
+        <div id="gm-log" class="log"></div>
+      </div>
     </div>
   </section>
 
@@ -441,7 +490,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
-  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games'];
   var TAB_KEY = 'hangtime-tab';
   var STORE_KEY = 'hangtime-tracker-v1';
   var BACKUP_KEY = 'hangtime-last-backup';
@@ -514,6 +563,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var teens = [], weeks = [], msgs = [], plans = {}, kids = [], prayers = [];
   var kidSel = new Set();
   var attendance = {};
+  var games = [], gameSel = new Set(), funSel = {}, editingGame = null, gameKind = 'All';
+  var GAME_KINDS = ['Active', 'Team', 'Relay', 'Icebreaker', 'Quiet', 'Bible game'];
+  var GAME_PLACES = ['Gym', 'Outside', 'Room', 'Anywhere'];
+  var FUN_LABELS = ['Flopped', 'Meh', 'Fun', 'Great', 'Kids loved it'];
   var editingKid = null;
   var mnRange = 'all';
   var presentSel = new Set();
@@ -521,7 +574,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var LEAD_LABELS = ['Struggled', 'Getting there', 'Solid', 'Strong', 'Outstanding'];
   var editingWeek = null, editingTeen = null, editingMsg = null;
   var filter = 'All';
-  var loaded = { teens: false, weeks: false, messages: false, plans: false, kids: false, prayers: false, attendance: false };
+  var loaded = { teens: false, weeks: false, messages: false, plans: false, kids: false, prayers: false, attendance: false, games: false };
 
   function $(id) { return document.getElementById(id); }
 
@@ -569,6 +622,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   function fmtShort(s) {
     var p = s.split('-').map(Number);
     return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function agoText(d) {
+    var n = daysSince(d);
+    return n === 0 ? ' (today)' : n < 0 ? ' (coming up)' : ' (' + n + (n === 1 ? ' day ago)' : ' days ago)');
   }
   function msgById(id) { return msgs.find(function (m) { return m.id === id; }); }
   function lessonOptions(sel, current, emptyText) {
@@ -705,6 +762,44 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       })(),
       el('div', { class: 'stat wide' }, sparkline(asc.slice(-12).map(function (w) { return w.rating; })), el('span', { text: 'Hangtime rating, newest on the right' }))
     );
+  }
+
+  function gameById(id) { return games.find(function (g) { return g.id === id; }); }
+
+  function renderWeekGames() {
+    var box = $('wk-games');
+    box.textContent = '';
+    if (!games.length) {
+      box.append(el('span', { class: 'hint', text: 'Add games on the Library tab to rate them each week.' }));
+      return;
+    }
+    // Games planned or played this week first, then the rest of the library.
+    var list = games.filter(function (g) { return gameSel.has(g.id); }).concat(games.filter(function (g) { return !gameSel.has(g.id); }));
+    list.forEach(function (g) {
+      var cb = el('input', { type: 'checkbox', id: 'wk-g-' + g.id });
+      cb.checked = gameSel.has(g.id);
+      var rate = el('div', { class: 'lead-rate', role: 'group', 'aria-label': 'How much kids liked ' + g.name });
+      function drawRate() {
+        rate.textContent = '';
+        rate.hidden = !cb.checked;
+        rate.append(el('span', { class: 'hint', text: funSel[g.id] ? FUN_LABELS[funSel[g.id] - 1] : 'Fun:' }));
+        for (var i = 1; i <= 5; i++) {
+          (function (v) {
+            rate.append(el('button', {
+              class: 'chip', type: 'button', text: String(v), 'aria-pressed': funSel[g.id] === v ? 'true' : 'false',
+              'aria-label': v + ', ' + FUN_LABELS[v - 1],
+              onclick: function () { if (funSel[g.id] === v) delete funSel[g.id]; else funSel[g.id] = v; drawRate(); }
+            }));
+          })(i);
+        }
+      }
+      cb.addEventListener('change', function () {
+        if (cb.checked) gameSel.add(g.id); else { gameSel.delete(g.id); delete funSel[g.id]; }
+        drawRate();
+      });
+      drawRate();
+      box.append(el('div', { class: 'teen-row' }, el('label', { class: 'check', for: 'wk-g-' + g.id }, cb, g.name), rate));
+    });
   }
 
   function renderWeekTeens() {
@@ -926,6 +1021,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         })(),
         lesson ? el('p', {}, el('span', { class: 'lbl', text: 'Lesson' }), lesson.title + (word ? ' · main idea: ' + word : '')) : null,
         names.length ? el('p', {}, el('span', { class: 'lbl', text: 'Teens who helped' }), names.join(', ')) : null,
+        (w.games || []).length ? el('p', {}, el('span', { class: 'lbl', text: 'Games' }), (w.games || []).map(function (id) {
+          var g = gameById(id); var f = w.fun && w.fun[id];
+          return g ? g.name + (f ? ' (' + f + '/5)' : '') : null;
+        }).filter(Boolean).join(', ')) : null,
         w.good ? el('p', {}, el('span', { class: 'lbl', text: 'Went well' }), w.good) : null,
         w.improve ? el('p', {}, el('span', { class: 'lbl', text: 'Change next time' }), w.improve) : null,
         el('div', { class: 'entry-actions' },
@@ -944,6 +1043,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     editingWeek = null;
     presentSel = new Set();
     leadSel = {};
+    gameSel = new Set();
+    funSel = {};
     $('wk-title').textContent = 'Log a Wednesday';
     $('wk-save').textContent = 'Save week';
     $('wk-cancel').hidden = true;
@@ -959,6 +1060,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = false; });
     prefillFromPlan();
     renderWeekTeens();
+    renderWeekGames();
     updateWeekHint();
   }
 
@@ -979,12 +1081,16 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       });
     }
     if (!$('wk-lesson').value && p.lesson && msgById(p.lesson)) $('wk-lesson').value = p.lesson;
+    if (!gameSel.size) (p.gameIds || []).forEach(function (id) { if (gameById(id)) gameSel.add(id); });
+    renderWeekGames();
   }
 
   function loadWeek(w) {
     editingWeek = w.date;
     presentSel = new Set(w.present || []);
     leadSel = Object.assign({}, w.leads || {});
+    gameSel = new Set(w.games || []);
+    funSel = Object.assign({}, w.fun || {});
     $('wk-title').textContent = 'Edit ' + fmtDate(w.date);
     $('wk-save').textContent = 'Update week';
     $('wk-cancel').hidden = false;
@@ -999,6 +1105,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     lessonOptions($('wk-lesson'), w.lesson || '', 'Not recorded');
     document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = Number(r.value) === w.rating; });
     renderWeekTeens();
+    renderWeekGames();
     updateWeekHint();
     $('wk-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -1024,9 +1131,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       present: Array.from(presentSel),
       leads: {},
       kidList: Array.from(kidSel),
+      games: Array.from(gameSel),
+      fun: {},
       decisions: $('wk-decisions').value === '' ? 0 : Number($('wk-decisions').value)
     };
     presentSel.forEach(function (id) { if (leadSel[id]) data.leads[id] = leadSel[id]; });
+    gameSel.forEach(function (id) { if (funSel[id]) data.fun[id] = funSel[id]; });
     var oldId = editingWeek;
     var ok = await attempt(async function () {
       await db.doc('weeks/' + date).set(data);
@@ -1258,6 +1368,193 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     if (ok) resetMsgForm();
   });
 
+  /* ---------- library: games ---------- */
+  function showLib(which) {
+    $('lib-lessons').hidden = which !== 'lessons';
+    $('lib-games').hidden = which !== 'games';
+    $('lib-show-lessons').setAttribute('aria-pressed', which === 'lessons' ? 'true' : 'false');
+    $('lib-show-games').setAttribute('aria-pressed', which === 'games' ? 'true' : 'false');
+  }
+  $('lib-show-lessons').addEventListener('click', function () { showLib('lessons'); });
+  $('lib-show-games').addEventListener('click', function () { showLib('games'); });
+
+  // Fun score, times played and last played, from every logged week that included the game.
+  function gameStats(id) {
+    var ws = sortedWeeksAsc().filter(function (w) { return (w.games || []).indexOf(id) > -1; });
+    var r = ws.map(function (w) { return w.fun && w.fun[id]; }).filter(Boolean);
+    return { plays: ws.length, last: ws.length ? ws[ws.length - 1].date : '', fun: r.length ? avg(r) : null, rated: r.length };
+  }
+
+  function buildGameSelects() {
+    GAME_KINDS.forEach(function (k) { $('gm-kind').append(el('option', { value: k, text: k })); });
+    GAME_PLACES.forEach(function (k) { $('gm-place').append(el('option', { value: k, text: k })); });
+  }
+
+  function renderGameChips() {
+    var box = $('gm-chips');
+    box.textContent = '';
+    ['All'].concat(GAME_KINDS).forEach(function (k) {
+      box.append(el('button', { class: 'chip', type: 'button', text: k, 'aria-pressed': gameKind === k ? 'true' : 'false',
+        onclick: function () { gameKind = k; renderGameChips(); renderGames(); } }));
+    });
+  }
+
+  function filteredGames() {
+    var q = $('gm-search').value.trim().toLowerCase();
+    return games.filter(function (g) {
+      return (gameKind === 'All' || g.kind === gameKind) &&
+        (!q || [g.name, g.how, g.supplies, g.tie].join(' ').toLowerCase().indexOf(q) > -1);
+    });
+  }
+
+  function addGameToPlan(g) {
+    if (!plan) return;
+    plan.gameIds = plan.gameIds || [];
+    if (plan.gameIds.indexOf(g.id) > -1) { toast(g.name + ' is already in the plan'); return; }
+    plan.gameIds.push(g.id);
+    renderPlanGames();
+    touchPlan();
+    flushPlan();
+    toast('Added ' + g.name + ' to the plan for ' + fmtShort(plan.date));
+  }
+
+  function renderGames() {
+    var box = $('gm-log');
+    box.textContent = '';
+    if (!games.length) {
+      box.append(el('div', { class: 'empty' },
+        el('p', { text: 'No games yet. Add your own above, or start with some Hangtime classics.', style: 'margin:0 0 10px' }),
+        el('button', { class: 'btn primary', type: 'button', text: 'Add starter games', onclick: addStarterGames })));
+      return;
+    }
+    var sort = $('gm-sort').value;
+    var list = filteredGames().map(function (g) { return { g: g, st: gameStats(g.id) }; });
+    list.sort(function (a, b) {
+      if (sort === 'az') return a.g.name.localeCompare(b.g.name);
+      if (sort === 'stale') return (a.st.last || '').localeCompare(b.st.last || '') || a.g.name.localeCompare(b.g.name);
+      var af = a.st.fun == null ? -1 : a.st.fun, bf = b.st.fun == null ? -1 : b.st.fun;
+      return bf - af || b.st.plays - a.st.plays || a.g.name.localeCompare(b.g.name);
+    });
+    if (!list.length) { box.append(el('div', { class: 'empty', text: 'No games match.' })); return; }
+    list.forEach(function (row) {
+      var g = row.g, st = row.st;
+      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
+      armDelete(del, function () { attempt(function () { return db.doc('games/' + g.id).delete(); }, 'Deleted ' + g.name); });
+      box.append(el('article', { class: 'entry', id: 'game-' + g.id },
+        el('div', { class: 'entry-top' },
+          el('h3', { text: g.name }),
+          el('div', { class: 'meta' },
+            st.fun != null ? el('span', { class: 'pill score', text: st.fun.toFixed(1) + ' fun' }) : null,
+            g.kind ? el('span', { class: 'pill', text: g.kind }) : null,
+            g.place ? el('span', { class: 'pill', text: g.place }) : null)),
+        el('p', { class: 'status-line', text: st.plays ? 'Played ' + st.plays + (st.plays === 1 ? ' time' : ' times') + ' · last ' + fmtShort(st.last) + agoText(st.last) : 'Not played yet' }),
+        g.supplies ? el('p', {}, el('span', { class: 'lbl', text: 'Supplies' }), g.supplies) : null,
+        g.how ? el('p', {}, el('span', { class: 'lbl', text: 'How to play' }), g.how) : null,
+        g.tie ? el('p', {}, el('span', { class: 'lbl', text: 'Bible tie-in' }), g.tie) : null,
+        g.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), g.notes) : null,
+        el('div', { class: 'entry-actions' },
+          el('button', { class: 'btn small primary', type: 'button', text: 'Add to plan', onclick: function () { addGameToPlan(g); } }),
+          el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadGame(g); } }), del)));
+    });
+  }
+
+  function resetGameForm() {
+    editingGame = null;
+    $('gm-title').textContent = 'Add a game';
+    $('gm-save').textContent = 'Add game';
+    $('gm-cancel').hidden = true;
+    ['gm-name', 'gm-supplies', 'gm-how', 'gm-tie', 'gm-notes'].forEach(function (id) { $(id).value = ''; });
+    $('gm-kind').value = GAME_KINDS[0];
+    $('gm-place').value = GAME_PLACES[0];
+  }
+  function loadGame(g) {
+    editingGame = g.id;
+    $('gm-title').textContent = 'Edit ' + g.name;
+    $('gm-save').textContent = 'Update game';
+    $('gm-cancel').hidden = false;
+    $('gm-name').value = g.name || '';
+    $('gm-kind').value = GAME_KINDS.indexOf(g.kind) > -1 ? g.kind : GAME_KINDS[0];
+    $('gm-place').value = GAME_PLACES.indexOf(g.place) > -1 ? g.place : GAME_PLACES[0];
+    $('gm-supplies').value = g.supplies || '';
+    $('gm-how').value = g.how || '';
+    $('gm-tie').value = g.tie || '';
+    $('gm-notes').value = g.notes || '';
+    $('gm-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('gm-cancel').addEventListener('click', resetGameForm);
+  $('gm-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var name = $('gm-name').value.trim();
+    if (!name) { toast('Enter a name.'); return; }
+    var data = { name: name, kind: $('gm-kind').value, place: $('gm-place').value, supplies: $('gm-supplies').value.trim(),
+      how: $('gm-how').value.trim(), tie: $('gm-tie').value.trim(), notes: $('gm-notes').value.trim() };
+    var ok;
+    if (editingGame) {
+      var id = editingGame;
+      ok = await attempt(function () { return db.doc('games/' + id).update(data); }, 'Updated ' + name);
+    } else {
+      data.created = Date.now();
+      ok = await attempt(function () { return db.collection('games').doc().set(data); }, 'Added ' + name);
+    }
+    if (ok) resetGameForm();
+  });
+  $('gm-search').addEventListener('input', renderGames);
+  $('gm-sort').addEventListener('change', renderGames);
+
+  // Picks from the current filter, favoring games not played in the last 4 weeks.
+  $('gm-random').addEventListener('click', function () {
+    var pool = filteredGames();
+    if (!pool.length) { toast('No games to pick from yet.'); return; }
+    var fresh = pool.filter(function (g) { var l = gameStats(g.id).last; return !l || daysSince(l) > 28; });
+    var pickFrom = fresh.length ? fresh : pool;
+    var g = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+    $('gm-search').value = '';
+    renderGames();
+    var card = $('game-' + g.id);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.outline = '3px solid var(--accent)';
+      setTimeout(function () { card.style.outline = ''; }, 2500);
+    }
+    toast('How about ' + g.name + '?');
+  });
+
+  var STARTER_GAMES = [
+    { name: 'Gaga Ball', kind: 'Active', place: 'Gym', supplies: 'Gaga pit (or a circle of tipped tables), soft playground ball',
+      how: 'Everyone starts inside the pit. Hit the ball with an open hand only. If the ball touches you at or below the knee, you are out. Hitting the ball out of the pit puts you out too. Last player in wins.' },
+    { name: 'Sharks and Minnows', kind: 'Active', place: 'Gym', supplies: 'Cones to mark the two safe zones',
+      how: 'One or two sharks stand in the middle. The minnows line up on one end. When a shark yells "Fishy, fishy, come swim in my sea!" the minnows run to the other end. Anyone tagged becomes a shark. Last minnow wins.',
+      tie: 'Peter walking on the water (Matthew 14:22–32): keep your eyes on Jesus, not the waves.' },
+    { name: 'Capture the Flag', kind: 'Team', place: 'Outside', supplies: '2 flags or bandanas, cones for the center line and jails',
+      how: 'Two teams each guard a flag on their own side. If you are tagged on the other side, go to their jail until a teammate tags you free. First team to bring the other flag back to their side wins.' },
+    { name: 'Four Corners', kind: 'Active', place: 'Room', supplies: 'Number the four corners 1 to 4',
+      how: 'One person closes their eyes and counts down from 10 while everyone else walks to a corner. They call out a number, and everyone in that corner is out. Keep going until one player is left, who becomes the next counter.' },
+    { name: 'Steal the Bacon', kind: 'Team', place: 'Gym', supplies: 'A beanbag or ball for the "bacon"',
+      how: 'Two teams line up facing each other, numbered off so each player has a match on the other team. Put the bacon in the middle. Call a number: those two players race to grab the bacon and get it home without being tagged.' },
+    { name: 'Red Light, Green Light', kind: 'Active', place: 'Anywhere', supplies: 'None',
+      how: 'The leader stands at the far end. On "green light" everyone moves forward; on "red light" everyone freezes. Anyone caught moving goes back to the start. First to tag the leader wins.' },
+    { name: 'Ships and Sailors', kind: 'Active', place: 'Gym', supplies: 'None',
+      how: 'Call out commands: "Ship" (run to one wall), "Shore" (run to the other wall), "Man overboard" (find a partner and sit), "Captain\'s coming" (freeze and salute). The last one to follow a command sits out.' },
+    { name: 'Human Knot', kind: 'Icebreaker', place: 'Room', supplies: 'None',
+      how: 'Groups of 6 to 10 stand in a circle. Everyone reaches in and grabs two different hands, not a neighbor\'s. Without letting go, untangle into one big circle.',
+      tie: 'One body, many parts (1 Corinthians 12): we need each other.' },
+    { name: 'Bible Sword Drill', kind: 'Bible game', place: 'Room', supplies: 'A Bible for each kid',
+      how: 'Kids hold closed Bibles at their side. Call "Attention!", then read a reference twice. On "Charge!" everyone races to find it. First to stand and read the verse out loud wins the round.',
+      tie: 'The sword of the Spirit is the word of God (Ephesians 6:17).' },
+    { name: 'Bible Charades', kind: 'Bible game', place: 'Room', supplies: 'Slips of paper with Bible stories (Noah\'s ark, David and Goliath, Jonah...)',
+      how: 'Split into teams. One player draws a slip and acts out the story without talking while their team guesses. Give each turn about a minute.' }
+  ];
+  async function addStarterGames() {
+    var have = new Set(games.map(function (g) { return g.name.toLowerCase(); }));
+    var add = STARTER_GAMES.filter(function (g) { return !have.has(g.name.toLowerCase()); });
+    var base = Date.now();
+    await attempt(async function () {
+      for (var i = 0; i < add.length; i++) {
+        await db.collection('games').doc().set(Object.assign({ supplies: '', tie: '', notes: '', created: base + i }, add[i]));
+      }
+    }, 'Added ' + add.length + ' games');
+  }
+
   /* ---------- people: kids ---------- */
   function showPeople(which) {
     $('pp-teens').hidden = which !== 'teens';
@@ -1428,7 +1725,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var plan = null, planDirty = false, planTimer = null;
 
   function blankPlan(date) {
-    return { date: date, word: '', lesson: '', arrive: '', games: '', roles: {},
+    return { date: date, word: '', lesson: '', arrive: '', games: '', gameIds: [], roles: {},
       checklist: DEFAULT_CHECKLIST.map(function (t) { return { t: t, done: false }; }) };
   }
 
@@ -1445,7 +1742,35 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     renderPlanLesson();
     renderPlanRoles();
     renderPlanChecklist();
+    renderPlanGames();
   }
+
+  function renderPlanGames() {
+    var box = $('pl-gamelist');
+    box.textContent = '';
+    var sel = $('pl-gamepick');
+    sel.textContent = '';
+    if (!plan) return;
+    var picked = (plan.gameIds || []).map(gameById).filter(Boolean);
+    picked.forEach(function (g) {
+      box.append(el('span', { class: 'chip', 'aria-pressed': 'true' }, g.name,
+        el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove ' + g.name, style: 'color:inherit;padding:0 2px;font-size:18px',
+          onclick: function () { plan.gameIds = plan.gameIds.filter(function (x) { return x !== g.id; }); renderPlanGames(); touchPlan(); } })));
+    });
+    sel.append(el('option', { value: '', text: games.length ? '+ Add a game from your library' : 'Add games on the Library tab first' }));
+    games.filter(function (g) { return picked.indexOf(g) < 0; }).slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (g) {
+      var st = gameStats(g.id);
+      sel.append(el('option', { value: g.id, text: g.name + (st.fun != null ? ' · ' + st.fun.toFixed(1) + ' fun' : '') + (st.last ? ' · last ' + fmtShort(st.last) : '') }));
+    });
+    sel.value = '';
+  }
+  $('pl-gamepick').addEventListener('change', function () {
+    var g = gameById($('pl-gamepick').value);
+    if (!g || !plan) return;
+    plan.gameIds = (plan.gameIds || []).concat([g.id]);
+    renderPlanGames();
+    touchPlan();
+  });
 
   function touchPlan() {
     planDirty = true;
@@ -1561,7 +1886,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     var m = plan.lesson && msgById(plan.lesson);
     if (m) lines.push('Lesson: ' + m.title + (m.passage ? ' (' + m.passage + ')' : ''));
     if (plan.arrive && plan.arrive.trim()) lines.push('', 'When kids arrive:', plan.arrive.trim());
-    if (plan.games && plan.games.trim()) lines.push('', 'Games:', plan.games.trim());
+    var gl = (plan.gameIds || []).map(gameById).filter(Boolean);
+    if (gl.length || (plan.games && plan.games.trim())) {
+      lines.push('', 'Games:');
+      gl.forEach(function (g) { lines.push('• ' + g.name + (g.supplies ? ' · bring: ' + g.supplies : '')); });
+      if (plan.games && plan.games.trim()) lines.push(plan.games.trim());
+    }
     var jobs = teens.filter(function (t) { return (plan.roles || {})[t.id]; });
     if (jobs.length) {
       lines.push('', 'Jobs:');
@@ -1589,7 +1919,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   function renderBackup() {
     var last = lastBackup();
-    var total = teens.length + weeks.length + msgs.length + Object.keys(plans).length + kids.length + prayers.length;
+    var total = teens.length + weeks.length + msgs.length + Object.keys(plans).length + kids.length + prayers.length + games.length;
     var days = last ? Math.floor((Date.now() - last) / 86400000) : null;
     var line = $('bk-status');
     if (!last) {
@@ -1605,7 +1935,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       msgs.length + (msgs.length === 1 ? ' sermon or lesson, ' : ' sermons and lessons, ') +
       Object.keys(plans).length + (Object.keys(plans).length === 1 ? ' plan, ' : ' plans, ') +
       kids.length + (kids.length === 1 ? ' kid, ' : ' kids, ') +
-      prayers.length + (prayers.length === 1 ? ' prayer request.' : ' prayer requests.');
+      prayers.length + (prayers.length === 1 ? ' prayer request, ' : ' prayer requests, ') +
+      games.length + (games.length === 1 ? ' game.' : ' games.');
   }
 
   function backupReminder() {
@@ -1679,12 +2010,17 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     db.collection('weeks').onSnapshot(function (snap) {
       weeks = toRows(snap);
       loaded.weeks = true;
-      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry(); renderDoor();
+      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry(); renderDoor(); renderGames(); renderPlanGames();
     });
     db.collection('kids').onSnapshot(function (snap) {
       kids = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
       loaded.kids = true;
       renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry(); renderDoor();
+    });
+    db.collection('games').onSnapshot(function (snap) {
+      games = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
+      loaded.games = true;
+      renderGames(); renderWeekGames(); renderWeeks(); renderPlanGames(); renderBackup();
     });
     db.collection('attendance').onSnapshot(function (snap) {
       attendance = {};
@@ -1718,6 +2054,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   buildRating();
   buildKinds();
+  buildGameSelects();
+  resetGameForm();
+  renderGameChips();
   resetWeekForm();
   resetTeenForm();
   resetMsgForm();
