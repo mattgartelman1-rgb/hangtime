@@ -197,11 +197,28 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .bars .ax { fill: var(--muted); font: 500 10px var(--font-body); }
 .bars .grid { stroke: var(--line); stroke-width: 1; }
 .subnav { display: flex; gap: 6px; }
+.door {
+  position: fixed; inset: 0; z-index: 30; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(16px, env(safe-area-inset-left, 0px));
+}
+.door-inner { max-width: 760px; margin: 0 auto; display: grid; gap: 14px; }
+.door-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.door-head h2 { font-size: 26px; margin: 0; }
+.door-count { font: 700 18px var(--font-display); color: var(--accent-text); margin: 2px 0 0; }
+.door-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.door-kid {
+  font: 600 17px/1.25 var(--font-body); padding: 16px 10px; min-height: 60px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); overflow-wrap: anywhere;
+}
+.door-kid[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.door-kid[aria-pressed="true"]::before { content: "✓ "; }
+.btn.big { width: 100%; padding: 14px; font-size: 17px; }
 .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
 .x:focus-visible { outline: 2px solid var(--accent); }
 .status-line.warn { color: var(--danger); font-weight: 600; }
 
 .toast {
+  z-index: 40;
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 20;
   background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px;
@@ -251,6 +268,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           <button class="btn small" type="button" id="pl-check-add">Add</button>
         </div>
       </fieldset>
+      <div class="actions"><button class="btn primary" type="button" id="pl-share">Share plan with teens</button></div>
       <p class="hint">Changes save on their own.</p>
     </form>
     <datalist id="role-options">
@@ -260,6 +278,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   </section>
 
   <section id="panel-weeks" class="panel" role="tabpanel" aria-labelledby="tab-weeks" hidden>
+    <button class="btn primary big" type="button" id="door-open">Door check-in</button>
     <div id="summary" class="summary"></div>
 
     <form id="wk-form" class="card" novalidate>
@@ -314,6 +333,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <div class="fields">
         <label for="tn-name">Name<input type="text" id="tn-name" autocomplete="off" required></label>
         <label for="tn-focus">Growing in<input type="text" id="tn-focus" autocomplete="off" placeholder="e.g. leading a small group"></label>
+        <label for="tn-bday">Birthday<input type="date" id="tn-bday"></label>
       </div>
       <div class="actions">
         <button class="btn primary" type="submit" id="tn-save">Add teen</button>
@@ -331,6 +351,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         <div class="fields">
           <label for="kd-name">Name<input type="text" id="kd-name" autocomplete="off" required></label>
           <label for="kd-grade">Grade<input type="text" id="kd-grade" autocomplete="off" placeholder="e.g. 3rd"></label>
+          <label for="kd-bday">Birthday<input type="date" id="kd-bday"></label>
         </div>
         <label for="kd-notes">Notes<textarea id="kd-notes" rows="2" placeholder="Parent contact, allergies, birthday, prayer needs"></textarea></label>
         <div class="actions">
@@ -401,6 +422,17 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </div>
   </section>
 </div>
+<div id="door" class="door" role="dialog" aria-modal="true" aria-labelledby="door-title" hidden>
+  <div class="door-inner">
+    <div class="door-head">
+      <div><h2 id="door-title">Door check-in</h2><p class="hint" id="door-date"></p><p class="door-count" id="door-count"></p></div>
+      <button class="btn primary" type="button" id="door-done">Done</button>
+    </div>
+    <input type="text" id="door-search" autocomplete="off" placeholder="Find a name, or type a new kid's name" aria-label="Find or add a kid">
+    <button class="btn big" type="button" id="door-add" hidden></button>
+    <div id="door-grid" class="door-grid"></div>
+  </div>
+</div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -409,7 +441,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
-  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance'];
   var TAB_KEY = 'hangtime-tab';
   var STORE_KEY = 'hangtime-tracker-v1';
   var BACKUP_KEY = 'hangtime-last-backup';
@@ -481,6 +513,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var db = store;
   var teens = [], weeks = [], msgs = [], plans = {}, kids = [], prayers = [];
   var kidSel = new Set();
+  var attendance = {};
   var editingKid = null;
   var mnRange = 'all';
   var presentSel = new Set();
@@ -488,7 +521,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var LEAD_LABELS = ['Struggled', 'Getting there', 'Solid', 'Strong', 'Outstanding'];
   var editingWeek = null, editingTeen = null, editingMsg = null;
   var filter = 'All';
-  var loaded = { teens: false, weeks: false, messages: false, plans: false, kids: false, prayers: false };
+  var loaded = { teens: false, weeks: false, messages: false, plans: false, kids: false, prayers: false, attendance: false };
 
   function $(id) { return document.getElementById(id); }
 
@@ -746,17 +779,115 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   $('wk-newkid-add').addEventListener('click', quickAddKid);
   $('wk-newkid').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); quickAddKid(); } });
 
+  // Kids who came on a date: checked off in the week log or tapped in at the door.
+  function kidListFor(date) {
+    var w = weeks.find(function (x) { return x.date === date; });
+    var set = new Set((w && w.kidList) || []);
+    ((attendance[date] && attendance[date].kidList) || []).forEach(function (id) { set.add(id); });
+    return Array.from(set);
+  }
+  // Every Wednesday that has a log or a door check-in, oldest first.
+  function hangtimeDates() {
+    var set = new Set(weeks.map(function (w) { return w.date; }));
+    Object.keys(attendance).forEach(function (d) { if ((attendance[d].kidList || []).length) set.add(d); });
+    return Array.from(set).sort();
+  }
   // Every Wednesday a kid was checked in, oldest first.
   function kidVisits(id) {
-    return sortedWeeksAsc().filter(function (w) { return (w.kidList || []).indexOf(id) > -1; }).map(function (w) { return w.date; });
+    return hangtimeDates().filter(function (d) { return kidListFor(d).indexOf(id) > -1; });
   }
-  // How many logged Wednesdays in a row a kid has missed since they last came.
+  // How many Wednesdays in a row a kid has missed since they last came.
   function kidMissed(id) {
     var v = kidVisits(id);
     if (!v.length) return null;
     var last = v[v.length - 1];
-    return weeks.filter(function (w) { return w.date > last; }).length;
+    return hangtimeDates().filter(function (d) { return d > last; }).length;
   }
+
+  /* ---------- birthdays ---------- */
+  function bdayIn(b) {
+    if (!b) return null;
+    var p = b.split('-').map(Number);
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var next = new Date(now.getFullYear(), p[1] - 1, p[2]);
+    if (next < now) next.setFullYear(now.getFullYear() + 1);
+    return Math.round((next - now) / 86400000);
+  }
+  function bdayLine(b) {
+    if (!b) return null;
+    var n = bdayIn(b);
+    var p = b.split('-').map(Number);
+    var md = new Date(2000, p[1] - 1, p[2]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    var soon = n === 0 ? ' · today!' : n <= 14 ? ' · in ' + n + (n === 1 ? ' day' : ' days') : '';
+    return el('p', { class: 'status-line' + (soon ? ' ok' : ''), text: 'Birthday: ' + md + soon });
+  }
+
+  /* ---------- door check-in ---------- */
+  var doorDate = null;
+  function openDoor() {
+    doorDate = lastWednesday();
+    $('door-date').textContent = fmtDate(doorDate);
+    $('door-search').value = '';
+    $('door').hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderDoor();
+  }
+  function closeDoor() {
+    $('door').hidden = true;
+    document.body.style.overflow = '';
+    if (!editingWeek && $('wk-date').value === doorDate) { kidSel = new Set(); $('wk-kids').value = ''; prefillFromPlan(); renderWeekKids(); }
+    toast(kidListFor(doorDate).length + ' kids checked in');
+  }
+  function doorList() { return (attendance[doorDate] && attendance[doorDate].kidList) || []; }
+  function renderDoor() {
+    if ($('door').hidden) return;
+    var list = doorList();
+    var all = kidListFor(doorDate);
+    $('door-count').textContent = all.length + (all.length === 1 ? ' kid checked in' : ' kids checked in');
+    var q = $('door-search').value.trim();
+    var ql = q.toLowerCase();
+    var shown = kids.filter(function (k) { return !ql || (k.name || '').toLowerCase().indexOf(ql) > -1; });
+    var exact = kids.some(function (k) { return (k.name || '').toLowerCase() === ql; });
+    // Offer "add" only when nobody matches, so a half-typed name can't create a duplicate.
+    $('door-add').hidden = !q || exact || shown.length > 0;
+    $('door-add').textContent = 'Add “' + q + '” as a new kid';
+    var grid = $('door-grid');
+    grid.textContent = '';
+    if (!kids.length && !q) grid.append(el('p', { class: 'hint', text: 'Type a kid\'s name above to add them and check them in.' }));
+    shown.forEach(function (k) {
+      var on = all.indexOf(k.id) > -1;
+      grid.append(el('button', { class: 'door-kid', type: 'button', 'aria-pressed': on ? 'true' : 'false', text: k.name,
+        onclick: function () { if (!on) $('door-search').value = ''; setDoor(k.id, !on); renderDoor(); } }));
+    });
+  }
+  async function setDoor(id, on) {
+    var list = doorList().filter(function (x) { return x !== id; });
+    if (on) list.push(id);
+    var w = weeks.find(function (x) { return x.date === doorDate; });
+    await attempt(async function () {
+      await db.doc('attendance/' + doorDate).set({ date: doorDate, kidList: list });
+      // Keep an already-logged week in step, including its head count when that came from check-ins.
+      if (w) {
+        var wl = (w.kidList || []).filter(function (x) { return x !== id; });
+        if (on) wl.push(id);
+        var upd = { kidList: wl };
+        if (w.kids == null || w.kids === (w.kidList || []).length) upd.kids = wl.length;
+        await db.doc('weeks/' + doorDate).update(upd);
+      }
+    });
+  }
+  async function doorAddKid() {
+    var name = $('door-search').value.trim();
+    if (!name) return;
+    var ref = db.collection('kids').doc();
+    var ok = await attempt(function () { return ref.set({ name: name, grade: '', notes: '', created: Date.now() }); });
+    if (ok) { $('door-search').value = ''; await setDoor(ref.id, true); toast('Welcome, ' + name + '!'); renderDoor(); }
+  }
+  $('door-open').addEventListener('click', openDoor);
+  $('door-done').addEventListener('click', closeDoor);
+  $('door-search').addEventListener('input', renderDoor);
+  $('door-search').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (!$('door-add').hidden) doorAddKid(); } });
+  $('door-add').addEventListener('click', doorAddKid);
 
   // A teen's leading scores, oldest first, from every logged week that rated them.
   function leadHistory(id) {
@@ -789,7 +920,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
             w.taught ? el('span', { class: 'pill', text: 'I taught' }) : null,
             w.decisions ? el('span', { class: 'pill', text: w.decisions + (w.decisions === 1 ? ' faith decision' : ' faith decisions') }) : null)),
         (function () {
-          var fresh = (w.kidList || []).filter(function (id) { return kidVisits(id)[0] === w.date; })
+          var fresh = kidListFor(w.date).filter(function (id) { return kidVisits(id)[0] === w.date; })
             .map(function (id) { var k = kids.find(function (x) { return x.id === id; }); return k && k.name; }).filter(Boolean);
           return fresh.length ? el('p', {}, el('span', { class: 'lbl', text: fresh.length === 1 ? 'First visit' : 'First visits' }), fresh.join(', ')) : null;
         })(),
@@ -835,6 +966,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   function prefillFromPlan() {
     if (editingWeek) return;
     var d = $('wk-date').value;
+    if (!kidSel.size && attendance[d] && !weeks.some(function (w) { return w.date === d; })) {
+      kidSel = new Set((attendance[d].kidList || []).filter(function (id) { return kids.some(function (k) { return k.id === id; }); }));
+      if (kidSel.size && $('wk-kids').value === '') $('wk-kids').value = kidSel.size;
+      renderWeekKids();
+    }
     var p = plans[d];
     if (!p || weeks.some(function (w) { return w.date === d; })) return;
     if (!presentSel.size) {
@@ -982,6 +1118,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           : el('p', { class: 'hint', text: 'No leading score yet. Rate them when you log a Wednesday they help at.' }),
         oneOnOne,
         t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
+        bdayLine(t.bday),
         notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
         notes.length > 1 ? el('details', {}, el('summary', { text: 'Earlier notes (' + (notes.length - 1) + ')' }), el('div', { class: 'notes' }, notes.slice(1).map(noteEl))) : null,
         el('div', { class: 'note-add' }, noteInput, el('button', { class: 'btn small', type: 'button', text: 'Add note', onclick: addNote })),
@@ -998,6 +1135,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('tn-cancel').hidden = true;
     $('tn-name').value = '';
     $('tn-focus').value = '';
+    $('tn-bday').value = '';
   }
   function loadTeen(t) {
     editingTeen = t.id;
@@ -1006,6 +1144,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('tn-cancel').hidden = false;
     $('tn-name').value = t.name;
     $('tn-focus').value = t.focus || '';
+    $('tn-bday').value = t.bday || '';
     $('tn-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('tn-cancel').addEventListener('click', resetTeenForm);
@@ -1014,12 +1153,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     var name = $('tn-name').value.trim();
     if (!name) { toast('Enter a name.'); return; }
     var focus = $('tn-focus').value.trim();
+    var bday = $('tn-bday').value;
     var ok;
     if (editingTeen) {
       var id = editingTeen;
-      ok = await attempt(function () { return db.doc('teens/' + id).update({ name: name, focus: focus }); }, 'Updated ' + name);
+      ok = await attempt(function () { return db.doc('teens/' + id).update({ name: name, focus: focus, bday: bday }); }, 'Updated ' + name);
     } else {
-      ok = await attempt(function () { return db.collection('teens').doc().set({ name: name, focus: focus, notes: [], created: Date.now() }); }, 'Added ' + name);
+      ok = await attempt(function () { return db.collection('teens').doc().set({ name: name, focus: focus, bday: bday, notes: [], created: Date.now() }); }, 'Added ' + name);
     }
     if (ok) resetTeenForm();
   });
@@ -1150,6 +1290,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
             el('span', { class: 'pill', text: v.length + (v.length === 1 ? ' visit' : ' visits') }))),
         v.length ? el('p', { class: 'status-line', text: 'First came ' + fmtShort(v[0]) + ' · last came ' + fmtShort(v[v.length - 1]) }) : el('p', { class: 'hint', text: 'Not checked in yet.' }),
         missed >= 3 ? el('p', { class: 'status-line warn', text: 'Missed the last ' + missed + ' Wednesdays. Worth a check-in.' }) : null,
+        bdayLine(k.bday),
         k.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), k.notes) : null,
         el('div', { class: 'entry-actions' },
           el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadKid(k); } }), del)));
@@ -1162,7 +1303,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-title').textContent = 'Add a kid';
     $('kd-save').textContent = 'Add kid';
     $('kd-cancel').hidden = true;
-    ['kd-name', 'kd-grade', 'kd-notes'].forEach(function (id) { $(id).value = ''; });
+    ['kd-name', 'kd-grade', 'kd-notes', 'kd-bday'].forEach(function (id) { $(id).value = ''; });
   }
   function loadKid(k) {
     editingKid = k.id;
@@ -1172,6 +1313,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-name').value = k.name || '';
     $('kd-grade').value = k.grade || '';
     $('kd-notes').value = k.notes || '';
+    $('kd-bday').value = k.bday || '';
     $('kd-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('kd-cancel').addEventListener('click', resetKidForm);
@@ -1179,7 +1321,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     ev.preventDefault();
     var name = $('kd-name').value.trim();
     if (!name) { toast('Enter a name.'); return; }
-    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim() };
+    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim(), bday: $('kd-bday').value };
     var ok;
     if (editingKid) {
       var id = editingKid;
@@ -1205,7 +1347,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     var visits = ws.reduce(function (s, w) { return s + (w.kids || 0); }, 0);
     var counted = ws.filter(function (w) { return w.kids != null; });
     var reached = new Set();
-    ws.forEach(function (w) { (w.kidList || []).forEach(function (id) { reached.add(id); }); });
+    hangtimeDates().filter(function (d) { return d >= from; }).forEach(function (d) { kidListFor(d).forEach(function (id) { reached.add(id); }); });
     var newKids = kids.filter(function (k) { var v = kidVisits(k.id); return v.length && v[0] >= from; }).length;
     var decisions = ws.reduce(function (s, w) { return s + (w.decisions || 0); }, 0);
     var hours = ws.reduce(function (s, w) { return s + (w.present || []).length * 2; }, 0);
@@ -1393,6 +1535,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     if (due.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Due for a 1-on-1' }), due.map(function (t) { return t.name; }).join(', ')));
     var away = kids.filter(function (k) { return kidMissed(k.id) >= 3; });
     if (away.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Kids who have not been back in 3+ weeks' }), away.map(function (k) { return k.name; }).join(', ')));
+    var bdays = teens.concat(kids).filter(function (x) { var n = bdayIn(x.bday); return n != null && n <= 14; })
+      .sort(function (a, b) { return bdayIn(a.bday) - bdayIn(b.bday); });
+    if (bdays.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Birthdays in the next 2 weeks' }), bdays.map(function (x) {
+      var n = bdayIn(x.bday);
+      return x.name + (n === 0 ? ' (today!)' : ' (in ' + n + (n === 1 ? ' day)' : ' days)'));
+    }).join(', ')));
     var asks = prayers.filter(function (p) { return !p.answered; });
     if (asks.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Praying for' }), asks.slice(0, 5).map(function (p) { return (p.who ? p.who + ': ' : '') + p.text; }).join('\n')));
     if (parts.length) box.append(el('div', { class: 'card remind' }, el('h2', { text: 'Before you plan' }), parts));
@@ -1406,6 +1554,33 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   $('pl-check-add').addEventListener('click', addChecklistItem);
   $('pl-check-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addChecklistItem(); } });
   $('pl-form').addEventListener('submit', function (e) { e.preventDefault(); });
+
+  function planText() {
+    var lines = ['Hangtime · ' + fmtDate(plan.date) + ' · 3:15–5:15pm'];
+    if (plan.word) lines.push('Main idea: ' + plan.word);
+    var m = plan.lesson && msgById(plan.lesson);
+    if (m) lines.push('Lesson: ' + m.title + (m.passage ? ' (' + m.passage + ')' : ''));
+    if (plan.arrive && plan.arrive.trim()) lines.push('', 'When kids arrive:', plan.arrive.trim());
+    if (plan.games && plan.games.trim()) lines.push('', 'Games:', plan.games.trim());
+    var jobs = teens.filter(function (t) { return (plan.roles || {})[t.id]; });
+    if (jobs.length) {
+      lines.push('', 'Jobs:');
+      jobs.forEach(function (t) { lines.push('• ' + t.name + ': ' + plan.roles[t.id]); });
+    }
+    lines.push('', 'Thanks for serving! 🙌');
+    return lines.join('\n');
+  }
+  $('pl-share').addEventListener('click', async function () {
+    if (!plan) return;
+    flushPlan();
+    var text = planText();
+    if (navigator.share) {
+      try { await navigator.share({ text: text }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast('Plan copied. Paste it into a text to your teens.'); }
+    catch (e) { toast('Could not share from this phone.'); }
+  });
 
   /* ---------- backup ---------- */
   function lastBackup() {
@@ -1504,12 +1679,18 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     db.collection('weeks').onSnapshot(function (snap) {
       weeks = toRows(snap);
       loaded.weeks = true;
-      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry();
+      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry(); renderDoor();
     });
     db.collection('kids').onSnapshot(function (snap) {
       kids = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
       loaded.kids = true;
-      renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry();
+      renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry(); renderDoor();
+    });
+    db.collection('attendance').onSnapshot(function (snap) {
+      attendance = {};
+      toRows(snap).forEach(function (a) { attendance[a.id] = a; });
+      loaded.attendance = true;
+      renderDoor(); renderKids(); renderWeeks(); renderPlanReminders(); renderMinistry();
     });
     db.collection('prayers').onSnapshot(function (snap) {
       prayers = toRows(snap);
