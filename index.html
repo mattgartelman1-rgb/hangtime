@@ -462,7 +462,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
     <div class="card">
       <h2>Teen check-in form</h2>
-      <p>Teens fill out your Google Form, and their answers show up here, on their People card, and on the Plan tab.</p>
+      <p>Teens fill out your Google Form, and their answers show up on the Plan tab, on their People card, and next to their name in Teen jobs.</p>
       <label for="fm-form">Form link (the one you send to teens)<input type="text" id="fm-form" autocomplete="off" inputmode="url" placeholder="https://forms.gle/..."></label>
       <label for="fm-sheet">Responses sheet link<input type="text" id="fm-sheet" autocomplete="off" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
       <p id="fm-status" class="status-line"></p>
@@ -1423,7 +1423,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   // Columns are found by words in the question, so small wording changes to the form still work.
   var FORM_COLS = { ts: ['timestamp'], name: ['name'], rating: ['how did', 'how was'], good: ['did well', 'went well'],
-    hard: ['hard'], grow: ['work on', 'grow', 'try'], prayer: ['pray'], serve: ['serve', 'next wednesday'] };
+    hard: ['hard'], grow: ['work on', 'grow', 'try'], prayer: ['pray'], serve: ['serve'], ideas: ['idea', 'better'] };
 
   function parseStamp(v) {
     var m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
@@ -1432,11 +1432,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     return isNaN(t) ? null : t;
   }
 
-  // The Wednesday a check-in's "can you serve next Wednesday?" answer is about.
+  // The Wednesday a "will you serve this week?" answer is about: that day if sent on a Wednesday, else the next one.
   function servesFor(ts) {
     var d = new Date(ts);
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 1);
     d.setDate(d.getDate() + ((3 - d.getDay() + 7) % 7));
     return iso(d);
   }
@@ -1489,7 +1488,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         var serve = get('serve');
         serve = /^y/i.test(serve) ? 'Yes' : /^n/i.test(serve) ? 'No' : serve ? 'Maybe' : '';
         await db.doc('responses/' + id).set({ ts: ts, name: name, rating: Number(get('rating')) || null, good: get('good'), hard: get('hard'),
-          grow: get('grow'), prayer: get('prayer'), serve: serve, serveDate: servesFor(ts), seen: false });
+          grow: get('grow'), prayer: get('prayer'), ideas: get('ideas'), serve: serve, serveDate: servesFor(ts), seen: false });
         added++;
       }
     });
@@ -1519,7 +1518,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       r.good ? el('p', {}, el('span', { class: 'lbl', text: 'Did well' }), r.good) : null,
       r.hard ? el('p', {}, el('span', { class: 'lbl', text: 'Was hard' }), r.hard) : null,
       r.grow ? el('p', {}, el('span', { class: 'lbl', text: 'Wants to work on' }), r.grow) : null,
-      r.prayer ? el('p', {}, el('span', { class: 'lbl', text: 'Prayer' }), r.prayer) : null
+      r.prayer ? el('p', {}, el('span', { class: 'lbl', text: 'Prayer' }), r.prayer) : null,
+      r.ideas ? el('p', {}, el('span', { class: 'lbl', text: 'Idea to make Hangtime better' }), r.ideas) : null
     ];
     var acts = el('div', { class: 'entry-actions' });
     if (r.prayer && !r.prayerAdded) {
@@ -1597,7 +1597,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   $('fm-send').addEventListener('click', async function () {
     var link = settings.form || $('fm-form').value.trim();
     if (!link) { formStatus('Add your form link first.', 'warn'); return; }
-    var text = 'Hey! Fill this out after Hangtime each week so I know how it went and how I can pray for you: ' + link;
+    var text = 'Hey! Let me know if you can serve at Hangtime this week, and share any ideas to make it even better: ' + link;
     if (navigator.share) {
       try { await navigator.share({ text: text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
