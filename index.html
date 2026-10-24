@@ -216,6 +216,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .toolbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .picked { display: flex; flex-wrap: wrap; gap: 6px; }
 .picked .chip { display: inline-flex; align-items: center; gap: 6px; }
+.resp { display: grid; gap: 6px; padding: 12px; border-radius: 8px; background: var(--bg); }
+.resp p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.resp .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; white-space: normal; }
+.resp-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.pill.yes { color: var(--good); border-color: currentColor; }
+.pill.no { color: var(--danger); border-color: currentColor; }
 .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
 .x:focus-visible { outline: 2px solid var(--accent); }
 .status-line.warn { color: var(--danger); font-weight: 600; }
@@ -248,6 +254,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   <div id="banner" class="banner" hidden></div>
 
   <section id="panel-plan" class="panel" role="tabpanel" aria-labelledby="tab-plan">
+    <div id="pl-inbox"></div>
     <div id="pl-remind"></div>
     <form id="pl-form" class="card" novalidate>
       <div class="log-head"><h2>Plan a Wednesday</h2><span id="pl-status" class="status-line"></span></div>
@@ -454,6 +461,19 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </form>
 
     <div class="card">
+      <h2>Teen check-in form</h2>
+      <p>Teens fill out your Google Form, and their answers show up here, on their People card, and on the Plan tab.</p>
+      <label for="fm-form">Form link (the one you send to teens)<input type="text" id="fm-form" autocomplete="off" inputmode="url" placeholder="https://forms.gle/..."></label>
+      <label for="fm-sheet">Responses sheet link<input type="text" id="fm-sheet" autocomplete="off" inputmode="url" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
+      <p id="fm-status" class="status-line"></p>
+      <div class="actions">
+        <button class="btn primary" type="button" id="fm-save">Save links</button>
+        <button class="btn" type="button" id="fm-check">Check for new answers</button>
+        <button class="btn" type="button" id="fm-send">Send form to teens</button>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Save a backup</h2>
       <p>Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.</p>
       <p id="bk-status" class="status-line"></p>
@@ -490,7 +510,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
-  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings'];
   var TAB_KEY = 'hangtime-tab';
   var STORE_KEY = 'hangtime-tracker-v1';
   var BACKUP_KEY = 'hangtime-last-backup';
@@ -563,6 +583,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var teens = [], weeks = [], msgs = [], plans = {}, kids = [], prayers = [];
   var kidSel = new Set();
   var attendance = {};
+  var responses = [], settings = {};
   var games = [], gameSel = new Set(), funSel = {}, editingGame = null, gameKind = 'All';
   var GAME_KINDS = ['Active', 'Team', 'Relay', 'Icebreaker', 'Quiet', 'Bible game'];
   var GAME_PLACES = ['Gym', 'Outside', 'Room', 'Anywhere'];
@@ -1229,6 +1250,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         oneOnOne,
         t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
         bdayLine(t.bday),
+        teenResponsesEl(t),
         notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
         notes.length > 1 ? el('details', {}, el('summary', { text: 'Earlier notes (' + (notes.length - 1) + ')' }), el('div', { class: 'notes' }, notes.slice(1).map(noteEl))) : null,
         el('div', { class: 'note-add' }, noteInput, el('button', { class: 'btn small', type: 'button', text: 'Add note', onclick: addNote })),
@@ -1367,6 +1389,223 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     }
     if (ok) resetMsgForm();
   });
+
+  /* ---------- teen check-in form (Google Form -> Google Sheet -> this app) ---------- */
+  function parseCSV(text) {
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (q) {
+        if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (c === '"') q = false;
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (x) { return x.trim() !== ''; }); });
+  }
+
+  // Accepts a normal sheet link (shared as "anyone with the link") or a "publish to web" link.
+  function csvUrl(link) {
+    link = (link || '').trim();
+    if (!link) return '';
+    if (/\/spreadsheets\/d\/e\//.test(link)) return link.replace(/\/pub(html)?.*$/, '/pub') + '?output=csv';
+    var m = link.match(/\/spreadsheets\/d\/([A-Za-z0-9_-]+)/);
+    if (!m) return '';
+    var gid = (link.match(/[#&?]gid=(\d+)/) || [])[1];
+    return 'https://docs.google.com/spreadsheets/d/' + m[1] + '/gviz/tq?tqx=out:csv&headers=1' + (gid ? '&gid=' + gid : '');
+  }
+
+  // Columns are found by words in the question, so small wording changes to the form still work.
+  var FORM_COLS = { ts: ['timestamp'], name: ['name'], rating: ['how did', 'how was'], good: ['did well', 'went well'],
+    hard: ['hard'], grow: ['work on', 'grow', 'try'], prayer: ['pray'], serve: ['serve', 'next wednesday'] };
+
+  function parseStamp(v) {
+    var m = String(v).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (m) return new Date(+m[3], +m[1] - 1, +m[2], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)).getTime();
+    var t = Date.parse(v);
+    return isNaN(t) ? null : t;
+  }
+
+  // The Wednesday a check-in's "can you serve next Wednesday?" answer is about.
+  function servesFor(ts) {
+    var d = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 1);
+    d.setDate(d.getDate() + ((3 - d.getDay() + 7) % 7));
+    return iso(d);
+  }
+
+  function norm(x) { return String(x || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function teenFor(name) {
+    var n = norm(name);
+    if (!n) return null;
+    var exact = teens.filter(function (t) { return norm(t.name) === n || (t.aliases || []).indexOf(n) > -1; });
+    if (exact.length) return exact[0];
+    var first = n.split(' ')[0];
+    var byFirst = teens.filter(function (t) { return norm(t.name).split(' ')[0] === first; });
+    return byFirst.length === 1 ? byFirst[0] : null;
+  }
+
+  async function checkForm(quiet) {
+    var url = csvUrl(settings.sheet);
+    if (!url) { if (!quiet) formStatus('Add your responses sheet link first.', 'warn'); return; }
+    if (!quiet) formStatus('Checking…');
+    var text;
+    try {
+      var res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      text = await res.text();
+      if (/^\s*</.test(text)) throw new Error('html');
+    } catch (e) {
+      formStatus(navigator.onLine === false ? 'You are offline. Answers will load next time you have internet.'
+        : 'Could not read the sheet. Make sure it is shared as "Anyone with the link" can view.', 'warn');
+      return;
+    }
+    var rows = parseCSV(text);
+    if (!rows.length) { formStatus('The sheet is empty so far.'); return; }
+    var head = rows[0].map(norm);
+    var col = {};
+    Object.keys(FORM_COLS).forEach(function (k) {
+      col[k] = head.findIndex(function (h) { return FORM_COLS[k].some(function (w) { return h.indexOf(w) > -1; }); });
+    });
+    if (col.ts < 0 || col.name < 0) { formStatus('That sheet does not look like form responses (no Timestamp or Name column).', 'warn'); return; }
+    var have = new Set(responses.map(function (r) { return r.id; }));
+    var added = 0;
+    await attempt(async function () {
+      for (var i = 1; i < rows.length; i++) {
+        var r = rows[i];
+        var ts = parseStamp(r[col.ts]);
+        var name = (r[col.name] || '').trim();
+        if (!ts || !name) continue;
+        var id = ('r' + ts + '-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-')).slice(0, 120);
+        if (have.has(id)) continue;
+        function get(k) { return col[k] > -1 ? (r[col[k]] || '').trim() : ''; }
+        var serve = get('serve');
+        serve = /^y/i.test(serve) ? 'Yes' : /^n/i.test(serve) ? 'No' : serve ? 'Maybe' : '';
+        await db.doc('responses/' + id).set({ ts: ts, name: name, rating: Number(get('rating')) || null, good: get('good'), hard: get('hard'),
+          grow: get('grow'), prayer: get('prayer'), serve: serve, serveDate: servesFor(ts), seen: false });
+        added++;
+      }
+    });
+    settings.checked = Date.now();
+    try { await db.doc('settings/form').set(settings); } catch (e) { /* status only */ }
+    formStatus(added ? added + (added === 1 ? ' new check-in' : ' new check-ins') + ' from your teens.' : 'No new answers. Last checked just now.', added ? 'ok' : '');
+    if (added && quiet) toast(added + (added === 1 ? ' new teen check-in' : ' new teen check-ins'));
+  }
+
+  function formStatus(text, cls) {
+    $('fm-status').textContent = text;
+    $('fm-status').className = 'status-line' + (cls ? ' ' + cls : '');
+  }
+
+  function respName(r) { var t = teenFor(r.name); return t ? t.name : r.name; }
+
+  function respEl(r, opts) {
+    opts = opts || {};
+    var t = teenFor(r.name);
+    var parts = [
+      el('div', { class: 'resp-head' },
+        el('strong', { text: opts.hideName ? fmtDate(iso(new Date(r.ts))) : respName(r) }),
+        el('span', { class: 'meta' },
+          r.rating ? el('span', { class: 'pill score', text: r.rating + '/5' }) : null,
+          r.serve ? el('span', { class: 'pill ' + (r.serve === 'Yes' ? 'yes' : r.serve === 'No' ? 'no' : ''), text: (r.serve === 'Yes' ? 'Can serve ' : r.serve === 'No' ? "Can't serve " : 'Maybe ') + fmtShort(r.serveDate) }) : null)),
+      opts.hideName ? null : el('span', { class: 'hint', text: fmtDate(iso(new Date(r.ts))) + (t ? '' : ' · not matched to a teen yet') }),
+      r.good ? el('p', {}, el('span', { class: 'lbl', text: 'Did well' }), r.good) : null,
+      r.hard ? el('p', {}, el('span', { class: 'lbl', text: 'Was hard' }), r.hard) : null,
+      r.grow ? el('p', {}, el('span', { class: 'lbl', text: 'Wants to work on' }), r.grow) : null,
+      r.prayer ? el('p', {}, el('span', { class: 'lbl', text: 'Prayer' }), r.prayer) : null
+    ];
+    var acts = el('div', { class: 'entry-actions' });
+    if (r.prayer && !r.prayerAdded) {
+      acts.append(el('button', { class: 'btn small', type: 'button', text: 'Add to prayer list', onclick: function () {
+        attempt(async function () {
+          await db.collection('prayers').doc().set({ who: respName(r), text: r.prayer, created: Date.now(), answered: null });
+          await db.doc('responses/' + r.id).update({ prayerAdded: true });
+        }, 'Added to prayer list');
+      } }));
+    }
+    if (!t && teens.length) {
+      var sel = el('select', { 'aria-label': 'Which teen is ' + r.name + '?' }, el('option', { value: '', text: 'Which teen is this?' }),
+        teens.map(function (x) { return el('option', { value: x.id, text: x.name }); }));
+      sel.addEventListener('change', function () {
+        var x = teens.find(function (y) { return y.id === sel.value; });
+        if (!x) return;
+        attempt(function () { return db.doc('teens/' + x.id).update({ aliases: (x.aliases || []).concat([norm(r.name)]) }); }, 'Matched to ' + x.name);
+      });
+      acts.append(sel);
+    }
+    if (opts.inbox) acts.append(el('button', { class: 'btn small', type: 'button', text: 'Mark read', onclick: function () {
+      attempt(function () { return db.doc('responses/' + r.id).update({ seen: true }); });
+    } }));
+    if (acts.childNodes.length) parts.push(acts);
+    return el('div', { class: 'resp' }, parts);
+  }
+
+  function renderInbox() {
+    var box = $('pl-inbox');
+    box.textContent = '';
+    var fresh = responses.filter(function (r) { return !r.seen; }).sort(function (a, b) { return b.ts - a.ts; });
+    if (!fresh.length) return;
+    box.append(el('div', { class: 'card' },
+      el('div', { class: 'log-head' }, el('h2', { text: 'New from your teens (' + fresh.length + ')' }),
+        el('button', { class: 'btn small', type: 'button', text: 'Mark all read', onclick: function () {
+          attempt(async function () { for (var i = 0; i < fresh.length; i++) await db.doc('responses/' + fresh[i].id).update({ seen: true }); });
+        } })),
+      el('div', { class: 'log' }, fresh.map(function (r) { return respEl(r, { inbox: true }); }))));
+  }
+
+  function teenResponsesEl(t) {
+    var mine = responses.filter(function (r) { var x = teenFor(r.name); return x && x.id === t.id; }).sort(function (a, b) { return b.ts - a.ts; });
+    if (!mine.length) return null;
+    return el('div', {},
+      el('span', { class: 'lbl', text: 'Their latest check-in', style: 'font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px' }),
+      respEl(mine[0], { hideName: true }),
+      mine.length > 1 ? el('details', { style: 'margin-top:8px' }, el('summary', { text: 'Earlier check-ins (' + (mine.length - 1) + ')' }),
+        el('div', { class: 'log', style: 'margin-top:8px' }, mine.slice(1).map(function (r) { return respEl(r, { hideName: true }); }))) : null);
+  }
+
+  function availabilityFor(t, date) {
+    var mine = responses.filter(function (r) { var x = teenFor(r.name); return x && x.id === t.id && r.serveDate === date && r.serve; })
+      .sort(function (a, b) { return b.ts - a.ts; });
+    return mine.length ? mine[0].serve : '';
+  }
+
+  function renderFormSettings() {
+    if (document.activeElement !== $('fm-form')) $('fm-form').value = settings.form || '';
+    if (document.activeElement !== $('fm-sheet')) $('fm-sheet').value = settings.sheet || '';
+    if (!$('fm-status').textContent) {
+      formStatus(!settings.sheet ? 'Not set up yet.' : settings.checked ? responses.length + ' check-ins so far. Last checked ' +
+        new Date(settings.checked).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.' : 'Ready. Tap "Check for new answers".');
+    }
+  }
+
+  $('fm-save').addEventListener('click', async function () {
+    var sheet = $('fm-sheet').value.trim();
+    if (sheet && !csvUrl(sheet)) { formStatus('That does not look like a Google Sheets link.', 'warn'); return; }
+    settings.form = $('fm-form').value.trim();
+    settings.sheet = sheet;
+    var ok = await attempt(function () { return db.doc('settings/form').set(settings); }, 'Links saved');
+    if (ok && sheet) checkForm(false);
+  });
+  $('fm-check').addEventListener('click', function () { checkForm(false); });
+  $('fm-send').addEventListener('click', async function () {
+    var link = settings.form || $('fm-form').value.trim();
+    if (!link) { formStatus('Add your form link first.', 'warn'); return; }
+    var text = 'Hey! Fill this out after Hangtime each week so I know how it went and how I can pray for you: ' + link;
+    if (navigator.share) {
+      try { await navigator.share({ text: text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast('Copied. Paste it into a text to your teens.'); }
+    catch (e) { toast('Could not share from this phone.'); }
+  });
+  // Pick up new answers whenever the app is opened or brought back to the front.
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && settings.sheet) checkForm(true); });
 
   /* ---------- library: games ---------- */
   function showLib(which) {
@@ -1820,7 +2059,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         if (v) plan.roles[t.id] = v; else delete plan.roles[t.id];
         touchPlan();
       });
-      box.append(el('div', { class: 'role-row' }, el('span', { text: t.name }), inp));
+      var avail = availabilityFor(t, plan.date);
+      box.append(el('div', { class: 'role-row' }, el('span', {}, t.name, avail ? el('span', { class: 'pill ' + (avail === 'Yes' ? 'yes' : avail === 'No' ? 'no' : ''), text: avail === 'Yes' ? 'Can serve' : avail === 'No' ? "Can't serve" : 'Maybe', style: 'margin-left:6px' }) : null), inp));
     });
   }
 
@@ -1936,7 +2176,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       Object.keys(plans).length + (Object.keys(plans).length === 1 ? ' plan, ' : ' plans, ') +
       kids.length + (kids.length === 1 ? ' kid, ' : ' kids, ') +
       prayers.length + (prayers.length === 1 ? ' prayer request, ' : ' prayer requests, ') +
-      games.length + (games.length === 1 ? ' game.' : ' games.');
+      games.length + (games.length === 1 ? ' game, ' : ' games, ') +
+      responses.length + (responses.length === 1 ? ' teen check-in.' : ' teen check-ins.');
   }
 
   function backupReminder() {
@@ -2005,7 +2246,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     db.collection('teens').onSnapshot(function (snap) {
       teens = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
       loaded.teens = true;
-      renderTeens(); renderWeekTeens(); renderWeeks(); renderBackup(); renderPlanRoles(); renderPlanReminders(); renderMinistry();
+      renderTeens(); renderWeekTeens(); renderWeeks(); renderBackup(); renderPlanRoles(); renderPlanReminders(); renderMinistry(); renderInbox();
     });
     db.collection('weeks').onSnapshot(function (snap) {
       weeks = toRows(snap);
@@ -2016,6 +2257,19 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       kids = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
       loaded.kids = true;
       renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry(); renderDoor();
+    });
+    db.collection('responses').onSnapshot(function (snap) {
+      responses = toRows(snap);
+      loaded.responses = true;
+      renderInbox(); renderTeens(); renderPlanRoles(); renderBackup();
+    });
+    db.collection('settings').onSnapshot(function (snap) {
+      var first = !loaded.settings;
+      settings = {};
+      toRows(snap).forEach(function (x) { if (x.id === 'form') { settings = x; delete settings.id; } });
+      loaded.settings = true;
+      renderFormSettings();
+      if (first && settings.sheet) checkForm(true);
     });
     db.collection('games').onSnapshot(function (snap) {
       games = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
