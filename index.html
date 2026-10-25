@@ -272,6 +272,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   <section id="panel-plan" class="panel" role="tabpanel" aria-labelledby="tab-plan">
     <div id="pl-nudge"></div>
     <div id="pl-inbox"></div>
+    <div id="pl-follow"></div>
     <div id="pl-remind"></div>
     <form id="pl-form" class="card" novalidate>
       <div class="log-head"><h2>Plan a Wednesday</h2><span id="pl-status" class="status-line"></span></div>
@@ -288,10 +289,12 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         <div id="pl-gamelist" class="picked"></div>
         <select id="pl-gamepick" aria-label="Add a game from your library"></select>
         <textarea id="pl-games" rows="2" placeholder="Other games, activities or notes" aria-label="Other games, activities or notes"></textarea>
+        <div id="pl-supplies"></div>
       </fieldset>
       <fieldset>
         <legend>Teen jobs</legend>
         <div id="pl-roles" class="role-list"></div>
+        <div class="actions"><button class="btn small" type="button" id="pl-suggest">Suggest jobs</button></div>
       </fieldset>
       <fieldset>
         <legend>Prep checklist</legend>
@@ -394,6 +397,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           <label for="kd-name">Name<input type="text" id="kd-name" autocomplete="off" required></label>
           <label for="kd-grade">Grade<input type="text" id="kd-grade" autocomplete="off" placeholder="e.g. 3rd"></label>
           <label for="kd-bday">Birthday<input type="date" id="kd-bday"></label>
+          <label for="kd-parent">Parent's name<input type="text" id="kd-parent" autocomplete="off"></label>
+          <label for="kd-phone">Parent's phone<input type="tel" id="kd-phone" autocomplete="off" inputmode="tel"></label>
         </div>
         <label for="kd-hint">Memory hint (for learning their name)<input type="text" id="kd-hint" autocomplete="off" placeholder="e.g. red glasses, loves soccer, Ben's little sister"></label>
         <label for="kd-notes">Notes<textarea id="kd-notes" rows="2" placeholder="Parent contact, allergies, birthday, prayer needs"></textarea></label>
@@ -487,6 +492,20 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     <div class="log-head"><h2>Ministry at a glance</h2><div id="mn-range" class="chips"></div></div>
     <div id="mn-stats" class="summary"></div>
     <div id="mn-chart"></div>
+    <div class="actions"><button class="btn primary" type="button" id="mn-report">Share a report</button></div>
+    <p class="hint" style="margin:-10px 0 0">Sends a summary of the time range above, for your pastor or church.</p>
+
+    <div class="card">
+      <h2>Semester goals</h2>
+      <div id="gl-log" class="log"></div>
+      <div class="fields">
+        <label for="gl-metric">Goal<select id="gl-metric"></select></label>
+        <label for="gl-target">Target<input type="number" id="gl-target" min="1" inputmode="decimal"></label>
+        <label for="gl-from">From<input type="date" id="gl-from"></label>
+        <label for="gl-to">To<input type="date" id="gl-to"></label>
+      </div>
+      <div class="actions"><button class="btn" type="button" id="gl-add">Add goal</button></div>
+    </div>
 
     <form id="pr-form" class="card" novalidate>
       <h2>Prayer requests</h2>
@@ -497,6 +516,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <div class="actions"><button class="btn primary" type="submit">Add request</button></div>
       <div id="pr-log" class="log"></div>
     </form>
+
+    <div class="card">
+      <h2>Your name</h2>
+      <label for="me-name">Used in texts to parents and teens<input type="text" id="me-name" autocomplete="off" placeholder="e.g. Matt"></label>
+    </div>
 
     <div class="card">
       <h2>Reminders</h2>
@@ -555,7 +579,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
-  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings', 'series'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings', 'series', 'goals'];
   var TAB_KEY = 'hangtime-tab';
   var STORE_KEY = 'hangtime-tracker-v1';
   var BACKUP_KEY = 'hangtime-last-backup';
@@ -630,6 +654,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var attendance = {};
   var responses = [], settings = {}, series = [];
   var quiz = null;
+  var me = {}, mgoals = [];
   var games = [], gameSel = new Set(), funSel = {}, editingGame = null, gameKind = 'All';
   var GAME_KINDS = ['Active', 'Team', 'Relay', 'Icebreaker', 'Quiet', 'Bible game'];
   var GAME_PLACES = ['Gym', 'Outside', 'Room', 'Anywhere'];
@@ -1421,6 +1446,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         oneOnOne,
         t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
         bdayLine(t.bday),
+        (function () {
+          var h = jobHistory(t.id, iso(new Date(Date.now() + 86400000)));
+          var ks = Object.keys(h).sort(function (a, b) { return h[b].n - h[a].n; });
+          return ks.length ? el('p', { class: 'status-line', text: 'Jobs done: ' + ks.map(function (r) { return r + ' ×' + h[r].n; }).join(', ') }) : null;
+        })(),
         teenGoalsEl(t),
         teenResponsesEl(t),
         notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
@@ -2085,10 +2115,16 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           el('h3', { text: k.name }),
           el('div', { class: 'meta' },
             k.grade ? el('span', { class: 'pill', text: k.grade }) : null,
+            kidStreak(k.id) >= 3 ? el('span', { class: 'pill score', text: '🔥 ' + kidStreak(k.id) + ' weeks in a row' }) : null,
             el('span', { class: 'pill', text: v.length + (v.length === 1 ? ' visit' : ' visits') }))),
         v.length ? el('p', { class: 'status-line', text: 'First came ' + fmtShort(v[0]) + ' · last came ' + fmtShort(v[v.length - 1]) }) : el('p', { class: 'hint', text: 'Not checked in yet.' }),
         missed >= 3 ? el('p', { class: 'status-line warn', text: 'Missed the last ' + missed + ' Wednesdays. Worth a check-in.' }) : null,
         k.hint ? el('p', {}, el('span', { class: 'lbl', text: 'Memory hint' }), k.hint) : null,
+        k.phone || k.parent ? el('div', { class: 'entry-actions', style: 'align-items:center' },
+          el('span', { class: 'status-line', text: 'Parent: ' + (k.parent || 'no name') + (k.phone ? ' · ' + k.phone : '') }),
+          k.phone ? el('a', { class: 'btn small', href: smsLink(k.phone, ''), style: 'text-decoration:none' }, 'Text') : null,
+          k.phone ? el('a', { class: 'btn small', href: 'tel:' + k.phone.replace(/[^\d+]/g, ''), style: 'text-decoration:none' }, 'Call') : null) : null,
+        (k.contacts || []).length ? el('p', { class: 'status-line', text: 'Last reached out ' + fmtShort(k.contacts[0].d) + (k.contacts[0].note ? ': ' + k.contacts[0].note : '') }) : null,
         bdayLine(k.bday),
         k.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), k.notes) : null,
         el('div', { class: 'entry-actions' },
@@ -2096,6 +2132,70 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
             onclick: function () { attempt(function () { return db.doc('kids/' + k.id).update({ known: !k.known }); }, k.known ? null : 'Name learned: ' + k.name); } }),
           el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadKid(k); } }), del)));
     });
+  }
+
+  /* care for kids and families */
+  function smsLink(phone, body) {
+    return 'sms:' + phone.replace(/[^\d+]/g, '') + (body ? '&body=' + encodeURIComponent(body) : '');
+  }
+  function firstName(name) { return String(name || '').trim().split(' ')[0]; }
+  function welcomeText(k) {
+    return 'Hi ' + (firstName(k.parent) || 'there') + '! This is ' + (me.name || 'your Hangtime leader') + ' from Hangtime. We loved having ' + firstName(k.name) +
+      ' with us on Wednesday! We meet every Wednesday from 3:15 to 5:15pm and would love to see ' + firstName(k.name) + ' again. Let me know if you have any questions!';
+  }
+  function missText(k) {
+    return 'Hi ' + (firstName(k.parent) || 'there') + '! This is ' + (me.name || 'your Hangtime leader') + ' from Hangtime. We have missed ' + firstName(k.name) +
+      ' the last few Wednesdays and hope everything is okay! We would love to see ' + firstName(k.name) + ' back this Wednesday, 3:15 to 5:15pm.';
+  }
+  function reachOut(k, text) {
+    if (k.phone) location.href = smsLink(k.phone, text);
+    else shareText(text, 'Message copied. Paste it into a text to ' + (k.parent || 'their parent') + '.');
+  }
+  function logContact(k, note) {
+    var c = [{ d: iso(new Date()), note: note || '' }].concat(k.contacts || []);
+    return attempt(function () { return db.doc('kids/' + k.id).update({ contacts: c }); }, 'Logged');
+  }
+
+  // Wednesdays in a row a kid has come, counting back from the latest Wednesday with a check-in list.
+  function kidStreak(id) {
+    var ds = hangtimeDates().filter(function (d) { return kidListFor(d).length; });
+    var n = 0;
+    for (var i = ds.length - 1; i >= 0; i--) { if (kidListFor(ds[i]).indexOf(id) > -1) n++; else break; }
+    return n;
+  }
+
+  function renderFollowups() {
+    var box = $('pl-follow');
+    box.textContent = '';
+    var items = [];
+    kids.forEach(function (k) {
+      var v = kidVisits(k.id);
+      if (!v.length) return;
+      var lastContact = (k.contacts || [])[0];
+      if (!k.welcomed && daysSince(v[0]) <= 21) {
+        items.push(el('div', { class: 'resp' },
+          el('div', { class: 'resp-head' }, el('strong', { text: k.name }), el('span', { class: 'pill yes', text: 'First visit ' + fmtShort(v[0]) })),
+          el('p', { class: 'hint', text: k.phone ? 'Welcome their family with a quick text.' : 'Add a parent phone number (Edit on their card) to text them right from here.' }),
+          el('div', { class: 'entry-actions' },
+            el('button', { class: 'btn small primary', type: 'button', text: 'Text a welcome', onclick: function () { reachOut(k, welcomeText(k)); } }),
+            el('button', { class: 'btn small', type: 'button', text: 'Done', onclick: function () {
+              attempt(function () { return db.doc('kids/' + k.id).update({ welcomed: iso(new Date()) }); }, 'Welcomed ' + k.name);
+            } }))));
+      }
+      var missed = kidMissed(k.id);
+      if (missed >= 3 && !(lastContact && lastContact.d > v[v.length - 1])) {
+        items.push(el('div', { class: 'resp' },
+          el('div', { class: 'resp-head' }, el('strong', { text: k.name }), el('span', { class: 'pill no', text: 'Missed ' + missed + ' weeks' })),
+          el('div', { class: 'entry-actions' },
+            el('button', { class: 'btn small primary', type: 'button', text: 'Text parent', onclick: function () { reachOut(k, missText(k)); } }),
+            el('button', { class: 'btn small', type: 'button', text: 'Reached out', onclick: function () {
+              var note = prompt('How did you reach out? (optional, e.g. "texted mom", "saw him at school")', '');
+              if (note === null) return;
+              logContact(k, note.trim());
+            } }))));
+      }
+    });
+    if (items.length) box.append(el('div', { class: 'card' }, el('h2', { text: 'Follow up (' + items.length + ')' }), el('div', { class: 'log' }, items)));
   }
 
   /* my goal: know every kid's name */
@@ -2154,7 +2254,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-title').textContent = 'Add a kid';
     $('kd-save').textContent = 'Add kid';
     $('kd-cancel').hidden = true;
-    ['kd-name', 'kd-grade', 'kd-notes', 'kd-bday', 'kd-hint'].forEach(function (id) { $(id).value = ''; });
+    ['kd-name', 'kd-grade', 'kd-notes', 'kd-bday', 'kd-hint', 'kd-parent', 'kd-phone'].forEach(function (id) { $(id).value = ''; });
   }
   function loadKid(k) {
     editingKid = k.id;
@@ -2166,6 +2266,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-notes').value = k.notes || '';
     $('kd-bday').value = k.bday || '';
     $('kd-hint').value = k.hint || '';
+    $('kd-parent').value = k.parent || '';
+    $('kd-phone').value = k.phone || '';
     $('kd-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('kd-cancel').addEventListener('click', resetKidForm);
@@ -2173,7 +2275,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     ev.preventDefault();
     var name = $('kd-name').value.trim();
     if (!name) { toast('Enter a name.'); return; }
-    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim(), bday: $('kd-bday').value, hint: $('kd-hint').value.trim() };
+    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim(), bday: $('kd-bday').value, hint: $('kd-hint').value.trim(),
+      parent: $('kd-parent').value.trim(), phone: $('kd-phone').value.trim() };
     var ok;
     if (editingKid) {
       var id = editingKid;
@@ -2250,7 +2353,104 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       });
       chart.append(el('div', { class: 'stat wide' }, svg, el('span', { text: 'Kids per Wednesday' })));
     }
+    renderGoals();
   }
+
+  // Ministry numbers for a date range (inclusive, ISO dates; '' means no limit).
+  function metrics(from, to) {
+    to = to || '9999';
+    var ws = sortedWeeksAsc().filter(function (w) { return w.date >= from && w.date <= to; });
+    var counted = ws.filter(function (w) { return w.kids != null; });
+    var reached = new Set();
+    hangtimeDates().filter(function (d) { return d >= from && d <= to; }).forEach(function (d) { kidListFor(d).forEach(function (id) { reached.add(id); }); });
+    var recalled = ws.filter(function (w) { return w.recall; });
+    return {
+      weeks: ws.length,
+      avgKids: counted.length ? counted.reduce(function (s, w) { return s + w.kids; }, 0) / counted.length : 0,
+      reached: reached.size,
+      newKids: kids.filter(function (k) { var v = kidVisits(k.id); return v.length && v[0] >= from && v[0] <= to; }).length,
+      decisions: ws.reduce(function (s, w) { return s + (w.decisions || 0); }, 0),
+      hours: ws.reduce(function (s, w) { return s + (w.present || []).length * 2; }, 0),
+      oneOnOnes: teens.reduce(function (s, t) { return s + (t.checkins || []).filter(function (d) { return d >= from && d <= to; }).length; }, 0),
+      answered: prayers.filter(function (p) { return p.answered && p.answered >= from && p.answered <= to; }).length,
+      recall: recalled.length ? 100 * recalled.filter(function (w) { return w.recall === 'Most'; }).length / recalled.length : 0,
+      teenGoals: teens.reduce(function (n, t) { return n + (t.goals || []).filter(function (g) { return g.done && g.done >= from && g.done <= to; }).length; }, 0),
+      names: kids.length ? 100 * kids.filter(function (k) { return k.known; }).length / kids.length : 0
+    };
+  }
+  var GOAL_TYPES = [
+    ['avgKids', 'Average kids per Wednesday', ''], ['reached', 'Different kids reached', ''], ['newKids', 'First-time kids', ''],
+    ['decisions', 'Faith decisions', ''], ['oneOnOnes', '1-on-1s with teens', ''], ['teenGoals', 'Teen growth goals reached', ''],
+    ['recall', 'Weeks most kids remember the main idea', '%'], ['names', 'Kids\' names I know', '%']
+  ];
+  GOAL_TYPES.forEach(function (g) { $('gl-metric').append(el('option', { value: g[0], text: g[1] + (g[2] ? ' (%)' : '') })); });
+  // Default to this semester: Jan–May, Jun–Aug (summer) or Sep–Dec.
+  (function () {
+    var y = new Date().getFullYear(), m = new Date().getMonth();
+    var span = m < 5 ? ['-01-01', '-05-31'] : m < 8 ? ['-06-01', '-08-31'] : ['-09-01', '-12-31'];
+    $('gl-from').value = y + span[0];
+    $('gl-to').value = y + span[1];
+  })();
+
+  function renderGoals() {
+    var box = $('gl-log');
+    box.textContent = '';
+    if (!mgoals.length) { box.append(el('p', { class: 'hint', text: 'Set a few goals for this semester, like averaging 20 kids or a 1-on-1 with every teen each month.' })); return; }
+    mgoals.slice().sort(function (a, b) { return a.to < b.to ? -1 : 1; }).forEach(function (g) {
+      var type = GOAL_TYPES.find(function (x) { return x[0] === g.metric; }) || ['', g.metric, ''];
+      var val = metrics(g.from, g.to)[g.metric] || 0;
+      var pct = Math.min(100, Math.round(100 * val / g.target));
+      var shown = (Math.round(val * 10) / 10) + type[2];
+      var over = g.to < iso(new Date());
+      box.append(el('div', { class: 'goal' },
+        el('div', { class: 'goal-head' }, el('strong', { text: type[1] + ': ' + g.target + type[2] }),
+          el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove goal', onclick: function () {
+            if (confirm('Remove this goal?')) attempt(function () { return db.doc('goals/' + g.id).delete(); });
+          } })),
+        el('div', { class: 'bar', role: 'img', 'aria-label': pct + ' percent there' }, el('i', { style: 'width:' + pct + '%' })),
+        el('span', { class: 'hint', text: shown + ' so far · ' + pct + '%' + (pct >= 100 ? ' · reached! 🎉' : '') + ' · ' + fmtShort(g.from) + ' to ' + fmtShort(g.to) + (over ? ' (ended)' : '') })));
+    });
+  }
+  $('gl-add').addEventListener('click', function () {
+    var target = Number($('gl-target').value);
+    if (!target) { toast('Enter a target number.'); return; }
+    if (!$('gl-from').value || !$('gl-to').value) { toast('Pick the start and end dates.'); return; }
+    attempt(function () { return db.collection('goals').doc().set({ metric: $('gl-metric').value, target: target, from: $('gl-from').value, to: $('gl-to').value, created: Date.now() }); }, 'Goal added')
+      .then(function (ok) { if (ok) $('gl-target').value = ''; });
+  });
+
+  $('mn-report').addEventListener('click', function () {
+    var from = mnRange === 'all' ? '' : iso(new Date(Date.now() - Number(mnRange) * 86400000));
+    var m = metrics(from, '');
+    var ws = sortedWeeksAsc().filter(function (w) { return w.date >= from; });
+    var start = from || (ws[0] && ws[0].date) || iso(new Date());
+    var lines = ['Hangtime report · ' + fmtShort(start) + ' to ' + fmtShort(iso(new Date())), ''];
+    lines.push('• ' + m.weeks + (m.weeks === 1 ? ' Wednesday' : ' Wednesdays') + (m.avgKids ? ', ' + Math.round(m.avgKids) + (Math.round(m.avgKids) === 1 ? ' kid' : ' kids') + ' on average' : ''));
+    if (m.reached) lines.push('• ' + m.reached + ' different kids, ' + m.newKids + ' of them new');
+    if (m.decisions) lines.push('• ' + m.decisions + (m.decisions === 1 ? ' faith decision' : ' faith decisions') + ' 🙏');
+    lines.push('• ' + teens.length + ' teen volunteers served ' + m.hours + ' hours' + (m.oneOnOnes ? ', with ' + m.oneOnOnes + ' 1-on-1s' : '') + (m.teenGoals ? ' and ' + m.teenGoals + ' growth goals reached' : ''));
+    var favs = games.map(function (g) { return { g: g, st: gameStats(g.id) }; }).filter(function (x) { return x.st.fun != null; })
+      .sort(function (a, b) { return b.st.fun - a.st.fun; }).slice(0, 3);
+    if (favs.length) lines.push('• Kids\' favorite games: ' + favs.map(function (x) { return x.g.name; }).join(', '));
+    var taught = ws.map(function (w) { return w.lesson && msgById(w.lesson); }).filter(Boolean);
+    if (taught.length) lines.push('• Lessons: ' + taught.map(function (x) { return x.title; }).join(', '));
+    if (m.answered) lines.push('• ' + m.answered + (m.answered === 1 ? ' prayer' : ' prayers') + ' answered');
+    if (mgoals.length) {
+      lines.push('', 'Goals:');
+      mgoals.forEach(function (g) {
+        var type = GOAL_TYPES.find(function (x) { return x[0] === g.metric; }) || ['', g.metric, ''];
+        var val = metrics(g.from, g.to)[g.metric] || 0;
+        lines.push('• ' + type[1] + ': ' + (Math.round(val * 10) / 10) + type[2] + ' of ' + g.target + type[2]);
+      });
+    }
+    lines.push('', 'Thank you for praying for Hangtime!' + (me.name ? ' – ' + me.name : ''));
+    shareText(lines.join('\n'), 'Report copied. Paste it into a text or email.');
+  });
+
+  $('me-name').addEventListener('change', function () {
+    me.name = $('me-name').value.trim();
+    attempt(function () { return db.doc('settings/me').set({ name: me.name }); }, 'Saved');
+  });
 
   function renderPrayers() {
     var box = $('pr-log');
@@ -2310,6 +2510,34 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     renderPlanSeries();
   }
 
+  function renderPlanSupplies() {
+    var box = $('pl-supplies');
+    box.textContent = '';
+    if (!plan) return;
+    var items = [];
+    (plan.gameIds || []).map(gameById).filter(Boolean).forEach(function (g) {
+      var sup = String(g.supplies || '').trim();
+      if (sup && !/^none\.?$/i.test(sup)) items.push(g.name + ': ' + sup);
+    });
+    var m = plan.lesson && msgById(plan.lesson);
+    if (m && m.activity) items.push('Lesson: ' + m.activity);
+    if (!items.length) return;
+    var have = plan.supplies || {};
+    var got = items.filter(function (x) { return have[x]; }).length;
+    box.append(el('div', { style: 'display:grid;gap:6px;margin-top:6px' },
+      el('span', { class: 'hint', text: 'Supplies to bring · ' + got + ' of ' + items.length + ' packed' }),
+      el('div', { class: 'checklist' }, items.map(function (x, i) {
+        var cb = el('input', { type: 'checkbox', id: 'pl-s-' + i });
+        cb.checked = !!have[x];
+        cb.addEventListener('change', function () {
+          plan.supplies = plan.supplies || {};
+          if (cb.checked) plan.supplies[x] = true; else delete plan.supplies[x];
+          renderPlanSupplies(); touchPlan();
+        });
+        return el('div', { class: 'check-item' + (have[x] ? ' done' : '') }, el('label', { class: 'check', for: 'pl-s-' + i }, cb, x));
+      }))));
+  }
+
   function renderPlanGames() {
     var box = $('pl-gamelist');
     box.textContent = '';
@@ -2328,6 +2556,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       sel.append(el('option', { value: g.id, text: g.name + (st.fun != null ? ' · ' + st.fun.toFixed(1) + ' fun' : '') + (st.last ? ' · last ' + fmtShort(st.last) : '') }));
     });
     sel.value = '';
+    renderPlanSupplies();
   }
   $('pl-gamepick').addEventListener('change', function () {
     var g = gameById($('pl-gamepick').value);
@@ -2366,6 +2595,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     lessonOptions($('pl-lesson'), plan.lesson, msgs.length ? 'Not picked yet' : 'Add lessons on the Lessons tab first');
     var m = plan.lesson && msgById(plan.lesson);
     $('pl-lesson-info').textContent = m ? [m.passage, m.point].filter(Boolean).join(' · ') : '';
+    renderPlanSupplies();
   }
 
   function renderPlanRoles() {
@@ -2389,6 +2619,38 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       box.append(el('div', { class: 'role-row' }, el('span', {}, t.name, avail ? el('span', { class: 'pill ' + (avail === 'Yes' ? 'yes' : avail === 'No' ? 'no' : ''), text: avail === 'Yes' ? 'Can serve' : avail === 'No' ? "Can't serve" : 'Maybe', style: 'margin-left:6px' }) : null), inp));
     });
   }
+
+  var ROLES = ['Greeter', 'Sign-in table', 'Games', 'Small group leader', 'Helping teach', 'Snacks', 'Clean-up'];
+  // Each teen's past jobs from earlier plans: { role: { n, last } }.
+  function jobHistory(id, before) {
+    var h = {};
+    Object.keys(plans).filter(function (d) { return d < before; }).sort().forEach(function (d) {
+      var r = (plans[d].roles || {})[id];
+      if (r) { h[r] = h[r] || { n: 0, last: '' }; h[r].n++; h[r].last = d; }
+    });
+    return h;
+  }
+  $('pl-suggest').addEventListener('click', function () {
+    if (!plan) return;
+    plan.roles = plan.roles || {};
+    var taken = {};
+    Object.keys(plan.roles).forEach(function (id) { taken[plan.roles[id]] = (taken[plan.roles[id]] || 0) + 1; });
+    var n = 0;
+    teens.filter(function (t) { return !plan.roles[t.id] && availabilityFor(t, plan.date) !== 'No'; }).forEach(function (t) {
+      var h = jobHistory(t.id, plan.date);
+      // Prefer jobs nobody has this week, then jobs this teen has done least, then longest ago.
+      var pick = ROLES.slice().sort(function (a, b) {
+        var ha = h[a] || { n: 0, last: '' }, hb = h[b] || { n: 0, last: '' };
+        return (taken[a] || 0) - (taken[b] || 0) || ha.n - hb.n || (ha.last < hb.last ? -1 : ha.last > hb.last ? 1 : 0) || Math.random() - 0.5;
+      })[0];
+      plan.roles[t.id] = pick;
+      taken[pick] = (taken[pick] || 0) + 1;
+      n++;
+    });
+    if (!n) { toast('Every available teen already has a job.'); return; }
+    renderPlanRoles(); touchPlan();
+    toast('Suggested jobs for ' + n + (n === 1 ? ' teen' : ' teens') + '. Change any you like.');
+  });
 
   function renderPlanChecklist() {
     var box = $('pl-check');
@@ -2417,6 +2679,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   }
 
   function renderPlanReminders() {
+    renderFollowups();
     var box = $('pl-remind');
     box.textContent = '';
     var parts = [];
@@ -2441,6 +2704,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       return x.name + (n === 0 ? ' (today!)' : ' (in ' + n + (n === 1 ? ' day)' : ' days)'));
     }).join(', ')));
     var asks = prayers.filter(function (p) { return !p.answered; });
+    var streaks = kids.map(function (k) { return { k: k, n: kidStreak(k.id) }; }).filter(function (x) { return x.n >= 4; }).sort(function (a, b) { return b.n - a.n; });
+    if (streaks.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Shout-outs' }), streaks.map(function (x) { return x.k.name + ' (' + x.n + ' weeks in a row)'; }).join(', ')));
     if (asks.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Praying for' }), asks.slice(0, 5).map(function (p) { return (p.who ? p.who + ': ' : '') + p.text; }).join('\n')));
     if (parts.length) box.append(el('div', { class: 'card remind' }, el('h2', { text: 'Before you plan' }), parts));
   }
@@ -2622,6 +2887,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       loaded.kids = true;
       renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry(); renderDoor();
     });
+    db.collection('goals').onSnapshot(function (snap) {
+      mgoals = toRows(snap);
+      renderGoals();
+    });
     db.collection('series').onSnapshot(function (snap) {
       series = toRows(snap);
       loaded.series = true;
@@ -2635,7 +2904,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     db.collection('settings').onSnapshot(function (snap) {
       var first = !loaded.settings;
       settings = {};
-      toRows(snap).forEach(function (x) { if (x.id === 'form') { settings = x; delete settings.id; } });
+      toRows(snap).forEach(function (x) { if (x.id === 'form') { settings = x; delete settings.id; } if (x.id === 'me') me = x; });
+      if (document.activeElement !== $('me-name')) $('me-name').value = me.name || '';
       loaded.settings = true;
       renderFormSettings();
       if (first && settings.sheet) checkForm(true);
