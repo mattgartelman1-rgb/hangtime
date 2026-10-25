@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Shepherd</title>
+<title>Next Gen</title>
 <meta name="theme-color" content="#13213C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Shepherd">
+<meta name="apple-mobile-web-app-title" content="Next Gen">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -249,20 +249,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .x:focus-visible { outline: 2px solid var(--accent); }
 .status-line.warn { color: var(--danger); font-weight: 600; }
 .num-fields { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
-.today { display: grid; gap: 10px; }
 .today-item { display: grid; gap: 4px; padding: 12px; border-radius: 8px; background: var(--bg); }
 .today-item .lbl { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .today-item p { margin: 0; overflow-wrap: anywhere; }
 .today-item .actions { margin-top: 4px; }
-.signups { display: grid; gap: 8px; }
-.signup { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--bg); }
-.signup-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.signup-top strong { overflow-wrap: anywhere; }
-.signup .chips .chip[aria-pressed="true"] { background: var(--good); color: var(--bg); }
-.signup input[type=number] { max-width: 110px; padding: 6px 8px; background: var(--surface); }
-.touch-add { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.touch-add input[type=text] { grid-column: 1 / -1; }
-.touch-add .btn { grid-column: 1 / -1; }
 
 .toast {
   z-index: 40;
@@ -277,25 +267,21 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
 <div class="wrap">
   <header>
-    <h1>Shepherd</h1>
+    <h1>Next Gen</h1>
     <p class="sub" id="app-sub">Everything is saved on this phone only.</p>
   </header>
 
   <div class="navs">
   <nav class="areas" aria-label="Ministries">
-    <button class="area" type="button" data-area="home" aria-pressed="true">Home</button>
-    <button class="area" type="button" data-area="hangtime" aria-pressed="false">Hangtime</button>
-    <button class="area" type="button" data-area="sunday" aria-pressed="false">Sunday</button>
-    <button class="area" type="button" data-area="youth" aria-pressed="false">Youth</button>
-    <button class="area" type="button" data-area="events" aria-pressed="false">Events</button>
-    <button class="area" type="button" data-area="care" aria-pressed="false">Care</button>
+    <button class="area" type="button" data-area="hangtime" aria-pressed="true">Hangtime</button>
+    <button class="area" type="button" data-area="youth" aria-pressed="false">Youth group</button>
   </nav>
-  <nav class="tabs" id="hangtime-tabs" role="tablist" aria-label="Hangtime sections" hidden>
+  <nav class="tabs" id="hangtime-tabs" role="tablist" aria-label="Hangtime sections">
     <button class="tab" role="tab" id="tab-plan" data-tab="plan" aria-selected="true">Plan</button>
     <button class="tab" role="tab" id="tab-weeks" data-tab="weeks" aria-selected="false">Weeks</button>
     <button class="tab" role="tab" id="tab-teens" data-tab="teens" aria-selected="false">People</button>
     <button class="tab" role="tab" id="tab-messages" data-tab="messages" aria-selected="false">Library</button>
-    <button class="tab" role="tab" id="tab-ministry" data-tab="ministry" aria-selected="false">Stats</button>
+    <button class="tab" role="tab" id="tab-ministry" data-tab="ministry" aria-selected="false">Ministry</button>
   </nav>
   </div>
 
@@ -541,6 +527,19 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
 
 
+    <form id="pr-form" class="card" novalidate>
+      <h2>Prayer requests</h2>
+      <div class="fields">
+        <label for="pr-who">For<input type="text" id="pr-who" autocomplete="off" placeholder="e.g. Ava, the Smith family, or Youth"></label>
+      </div>
+      <label for="pr-text">Request<textarea id="pr-text" rows="2"></textarea></label>
+      <div class="actions"><button class="btn primary" type="submit">Add request</button></div>
+      <div id="pr-log" class="log"></div>
+    </form>
+    <div class="card">
+      <h2>Your name</h2>
+      <label for="me-name">Used in texts to parents, teens and volunteers<input type="text" id="me-name" autocomplete="off" placeholder="e.g. Matt"></label>
+    </div>
     <div class="card">
       <h2>Reminders</h2>
       <p>Add 3 weekly alerts to your iPhone Calendar: <strong>Tuesday 7pm</strong> finish your plan, <strong>Wednesday 2:45pm</strong> door check-in, and <strong>Wednesday 5:30pm</strong> log Hangtime and rate your teens. You can change the times in Calendar afterward.</p>
@@ -561,25 +560,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       </div>
     </div>
 
-  </section>
-
-  <section id="area-home" class="panel">
-    <div id="hm-today"></div>
-    <div class="log-head"><h2>Last 30 days</h2></div>
-    <div id="hm-stats" class="summary"></div>
-    <form id="pr-form" class="card" novalidate>
-      <h2>Prayer requests</h2>
-      <div class="fields">
-        <label for="pr-who">For<input type="text" id="pr-who" autocomplete="off" placeholder="e.g. Ava, the Smith family, or Youth"></label>
-      </div>
-      <label for="pr-text">Request<textarea id="pr-text" rows="2"></textarea></label>
-      <div class="actions"><button class="btn primary" type="submit">Add request</button></div>
-      <div id="pr-log" class="log"></div>
-    </form>
-    <div class="card">
-      <h2>Your name</h2>
-      <label for="me-name">Used in texts to parents, teens and volunteers<input type="text" id="me-name" autocomplete="off" placeholder="e.g. Matt"></label>
-    </div>
     <div class="card">
       <h2>Save a backup</h2>
       <p>Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.</p>
@@ -595,46 +575,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     <div class="card">
       <h2>On this phone</h2>
       <p id="bk-counts" class="status-line"></p>
-    </div>
-  </section>
-
-  <section id="area-sunday" class="panel" hidden>
-    <form id="sv-form" class="card" novalidate>
-      <div class="log-head"><h2 id="sv-title">Plan a Sunday</h2><span id="sv-status" class="status-line"></span></div>
-      <div class="fields">
-        <label for="sv-date">Date<input type="date" id="sv-date"></label>
-        <label for="sv-preacher">Preaching<input type="text" id="sv-preacher" autocomplete="off" placeholder="e.g. Pastor Dan, or me"></label>
-      </div>
-      <label for="sv-msg">Message from your library<select id="sv-msg"></select></label>
-      <label for="sv-topic">Or title and passage<input type="text" id="sv-topic" autocomplete="off" placeholder="e.g. The Good Shepherd, John 10"></label>
-      <label for="sv-songs">Songs, one per line<textarea id="sv-songs" rows="4"></textarea></label>
-      <fieldset>
-        <legend>Volunteers</legend>
-        <div id="sv-roles" class="role-list"></div>
-        <div class="note-add">
-          <input type="text" id="sv-role-new" autocomplete="off" placeholder="Add a job, e.g. Communion" aria-label="New volunteer job">
-          <button class="btn small" type="button" id="sv-role-add">Add</button>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>After the service</legend>
-        <div class="fields num-fields">
-          <label for="sv-adults">Adults<input type="number" id="sv-adults" min="0" inputmode="numeric"></label>
-          <label for="sv-kids">Kids<input type="number" id="sv-kids" min="0" inputmode="numeric"></label>
-          <label for="sv-guests">First-time guests<input type="number" id="sv-guests" min="0" inputmode="numeric"></label>
-          <label for="sv-decisions">Salvations and baptisms<input type="number" id="sv-decisions" min="0" inputmode="numeric"></label>
-        </div>
-      </fieldset>
-      <label for="sv-notes">Notes<textarea id="sv-notes" rows="2" placeholder="Announcements, what went well, guests to follow up with"></textarea></label>
-      <div class="actions">
-        <button class="btn primary" type="submit" id="sv-save">Save Sunday</button>
-        <button class="btn" type="button" id="sv-share">Share lineup with volunteers</button>
-      </div>
-    </form>
-    <div id="sv-summary" class="summary"></div>
-    <div class="log">
-      <div class="log-head"><h2>Sundays</h2></div>
-      <div id="sv-log" class="log"></div>
     </div>
   </section>
 
@@ -684,7 +624,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           </select></label>
           <label for="yo-time">Time<input type="text" id="yo-time" autocomplete="off" placeholder="e.g. 6:30–8pm"></label>
         </div>
-        <p class="hint">Used for the date on new nights, the Home page, and texts to students.</p>
+        <p class="hint">Used for the date on new nights and in texts to students.</p>
       </div>
     </div>
     <div id="yo-students" class="panel" style="padding-top:0" hidden>
@@ -711,52 +651,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </div>
   </section>
 
-  <section id="area-events" class="panel" hidden>
-    <form id="ev-form" class="card" novalidate>
-      <h2 id="ev-title">Add an event or trip</h2>
-      <div class="fields">
-        <label for="ev-name">Name<input type="text" id="ev-name" autocomplete="off" required placeholder="e.g. Winter Retreat"></label>
-        <label for="ev-kind">Kind<select id="ev-kind"></select></label>
-        <label for="ev-start">Starts<input type="date" id="ev-start"></label>
-        <label for="ev-end">Ends<input type="date" id="ev-end"></label>
-        <label for="ev-place">Where<input type="text" id="ev-place" autocomplete="off"></label>
-        <label for="ev-cost">Cost per person ($)<input type="number" id="ev-cost" min="0" step="0.01" inputmode="decimal"></label>
-        <label for="ev-due">Payment and forms due<input type="date" id="ev-due"></label>
-      </div>
-      <label for="ev-notes">Details<textarea id="ev-notes" rows="2" placeholder="Times, what to bring, who's driving"></textarea></label>
-      <div class="actions">
-        <button class="btn primary" type="submit" id="ev-save">Add event</button>
-        <button class="btn" type="button" id="ev-cancel" hidden>Cancel edit</button>
-      </div>
-    </form>
-    <div class="log">
-      <div class="log-head"><h2>Coming up</h2></div>
-      <div id="ev-log" class="log"></div>
-    </div>
-  </section>
-
-  <section id="area-care" class="panel" hidden>
-    <div id="cr-due"></div>
-    <form id="cr-form" class="card" novalidate>
-      <h2 id="cr-title">Add someone to care for</h2>
-      <div class="fields">
-        <label for="cr-name">Name<input type="text" id="cr-name" autocomplete="off" required placeholder="e.g. Ruth Miller, or the Lee family"></label>
-        <label for="cr-phone">Phone<input type="tel" id="cr-phone" autocomplete="off" inputmode="tel"></label>
-        <label for="cr-why">What's going on<select id="cr-why"></select></label>
-        <label for="cr-next">Next follow-up<input type="date" id="cr-next"></label>
-      </div>
-      <label for="cr-notes">Notes<textarea id="cr-notes" rows="2" placeholder="Hospital and room, family names, how to pray"></textarea></label>
-      <div class="actions">
-        <button class="btn primary" type="submit" id="cr-save">Add person</button>
-        <button class="btn" type="button" id="cr-cancel" hidden>Cancel edit</button>
-      </div>
-    </form>
-    <div class="log">
-      <div class="log-head"><h2>People</h2><div id="cr-filter" class="chips"></div></div>
-      <input type="text" id="cr-search" autocomplete="off" placeholder="Search" aria-label="Search people">
-      <div id="cr-log" class="log"></div>
-    </div>
-  </section>
 </div>
 <div id="door" class="door" role="dialog" aria-modal="true" aria-labelledby="door-title" hidden>
   <div class="door-inner">
@@ -778,7 +672,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
   var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings', 'series', 'goals',
-    'services', 'ynights', 'students', 'events', 'care'];
+    'ynights', 'students'];
   var TAB_KEY = 'hangtime-tab';
   var AREA_KEY = 'ministry-area';
   var STORE_KEY = 'hangtime-tracker-v1';
@@ -855,7 +749,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var responses = [], settings = {}, series = [];
   var quiz = null;
   var me = {}, mgoals = [];
-  var services = [], ynights = [], students = [], events = [], care = [], youthCfg = {};
+  var ynights = [], students = [], youthCfg = {};
   var games = [], gameSel = new Set(), funSel = {}, editingGame = null, gameKind = 'All';
   var GAME_KINDS = ['Active', 'Team', 'Relay', 'Icebreaker', 'Quiet', 'Bible game'];
   var GAME_PLACES = ['Gym', 'Outside', 'Room', 'Anywhere'];
@@ -971,17 +865,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   }
 
   /* ---------- ministries and Hangtime's tabs ---------- */
-  var AREAS = ['home', 'hangtime', 'sunday', 'youth', 'events', 'care'];
+  var AREAS = ['hangtime', 'youth'];
   var AREA_SUBS = {
-    home: 'Your whole ministry at a glance. Everything is saved on this phone only.',
     hangtime: 'Wednesdays, 3:15–5:15pm. Everything is saved on this phone only.',
-    sunday: 'Who is preaching, songs, volunteers and attendance.',
-    youth: 'Youth group nights, students and follow-ups.',
-    events: 'Camps, retreats, outreach and trips: sign-ups, payments and forms.',
-    care: 'Visits, calls and follow-ups. Notes stay private on this phone.'
+    youth: 'Nights, students and follow-ups. Everything is saved on this phone only.'
   };
   var TABS = ['plan', 'weeks', 'teens', 'messages', 'ministry'];
-  var curArea = 'home', curTab = 'plan';
+  var curArea = 'hangtime', curTab = 'plan';
   function paintTabs() {
     var on = curArea === 'hangtime';
     TABS.forEach(function (n) {
@@ -992,12 +882,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   }
   function showArea(name) {
     curArea = name;
-    AREAS.forEach(function (a) { if (a !== 'hangtime') $('area-' + a).hidden = a !== name; });
+    $('area-youth').hidden = name !== 'youth';
     document.querySelectorAll('.area').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.area === name ? 'true' : 'false'); });
     $('hangtime-tabs').hidden = name !== 'hangtime';
     $('app-sub').textContent = AREA_SUBS[name];
     paintTabs();
-    if (name === 'home') { renderBackup(); renderHome(); }
     try { localStorage.setItem(AREA_KEY, name); } catch (e) { /* not critical */ }
     window.scrollTo(0, 0);
   }
@@ -3012,12 +2901,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   /* ---------- shared helpers for the other ministries ---------- */
   function today() { return iso(new Date()); }
   function addDays(s, n) { var p = s.split('-').map(Number); return iso(new Date(p[0], p[1] - 1, p[2] + n)); }
-  function nextDow(dow) { var d = new Date(); d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7)); return iso(d); }
   function lastDow(dow) { var d = new Date(); d.setDate(d.getDate() - ((d.getDay() - dow + 7) % 7)); return iso(d); }
   function numVal(id) { var v = $(id).value.trim(); return v === '' ? null : Math.max(0, Number(v) || 0); }
   function setNum(id, v) { $(id).value = v == null ? '' : String(v); }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
-  function money(n) { return '$' + (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
   function inDays(d) {
     var n = -daysSince(d);
     return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n > 0 ? 'in ' + n + ' days' : n === -1 ? 'yesterday' : -n + ' days ago';
@@ -3054,165 +2941,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     });
     return el('div', { class: 'stat wide' }, svg, el('span', { text: what }));
   }
-  function checklistEl(items, idp, onChange) {
-    var box = el('div', { class: 'checklist' });
-    items.forEach(function (item, i) {
-      var cb = el('input', { type: 'checkbox', id: idp + i });
-      cb.checked = !!item.done;
-      cb.addEventListener('change', function () { item.done = cb.checked; onChange(items); });
-      box.append(el('div', { class: 'check-item' + (item.done ? ' done' : '') },
-        el('label', { class: 'check', for: idp + i }, cb, item.t),
-        el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove ' + item.t, onclick: function () { items.splice(i, 1); onChange(items); } })));
-    });
-    var input = el('input', { type: 'text', id: idp + 'new', autocomplete: 'off', placeholder: 'Add a to-do', 'aria-label': 'New to-do' });
-    function add() {
-      var v = input.value.trim();
-      if (!v) return;
-      items.push({ t: v, done: false });
-      onChange(items).then(function () { var n = $(idp + 'new'); if (n) n.focus(); });
-    }
-    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); add(); } });
-    box.append(el('div', { class: 'note-add' }, input, el('button', { class: 'btn small', type: 'button', text: 'Add', onclick: add })));
-    return box;
-  }
-
-  /* ---------- Sunday services ---------- */
-  var DEFAULT_SUNDAY_ROLES = ['Worship leader', 'Sound', 'Slides', 'Greeters', 'Ushers', 'Nursery', 'Kids’ church'];
-  var svRoles = [];
-
-  function serviceFor(date) { return services.find(function (s) { return s.id === date; }); }
-  function hasCount(sv) { return sv.adults != null || sv.kids != null; }
-  function svTotal(sv) { return (sv.adults || 0) + (sv.kids || 0); }
-  function svMessage(sv) {
-    var m = sv.msg && msgById(sv.msg);
-    return m ? m.title + (m.passage ? ' (' + m.passage + ')' : '') : sv.topic || '';
-  }
-  function openRoles(sv) { return (sv.roles || []).filter(function (r) { return !r.who; }); }
-
-  function openService(date) {
-    var sv = serviceFor(date);
-    $('sv-date').value = date;
-    $('sv-preacher').value = sv ? sv.preacher || '' : '';
-    lessonOptions($('sv-msg'), sv && sv.msg, 'None picked');
-    $('sv-topic').value = sv ? sv.topic || '' : '';
-    $('sv-songs').value = sv ? (sv.songs || []).join('\n') : '';
-    setNum('sv-adults', sv && sv.adults); setNum('sv-kids', sv && sv.kids);
-    setNum('sv-guests', sv && sv.guests); setNum('sv-decisions', sv && sv.decisions);
-    $('sv-notes').value = sv ? sv.notes || '' : '';
-    if (sv) svRoles = JSON.parse(JSON.stringify(sv.roles || []));
-    else {
-      var prev = services.slice().sort(function (a, b) { return a.id < b.id ? 1 : -1; }).find(function (s) { return (s.roles || []).length; });
-      svRoles = (prev ? prev.roles.map(function (r) { return r.r; }) : DEFAULT_SUNDAY_ROLES).map(function (r) { return { r: r, who: '' }; });
-    }
-    $('sv-title').textContent = sv ? 'Sunday, ' + fmtShort(date) : 'Plan a Sunday';
-    $('sv-status').textContent = date ? inDays(date) : '';
-    $('sv-save').textContent = sv ? 'Save changes' : 'Save Sunday';
-    renderSvRoles();
-  }
-
-  function renderSvRoles() {
-    var box = $('sv-roles');
-    box.textContent = '';
-    var names = new Set();
-    services.forEach(function (s) { (s.roles || []).forEach(function (r) { if (r.who) names.add(r.who); }); });
-    var dl = $('sv-people') || el('datalist', { id: 'sv-people' });
-    dl.textContent = '';
-    Array.from(names).sort().forEach(function (n) { dl.append(el('option', { value: n })); });
-    if (!dl.isConnected) $('sv-form').append(dl);
-    svRoles.forEach(function (x, i) {
-      var input = el('input', { type: 'text', id: 'sv-r-' + i, autocomplete: 'off', list: 'sv-people', placeholder: 'Who?', value: x.who || '' });
-      input.addEventListener('input', function () { x.who = input.value; });
-      box.append(el('div', { class: 'role-row' },
-        el('label', { for: 'sv-r-' + i, style: 'font-size:15px;font-weight:600;color:var(--ink)' }, x.r),
-        el('div', { class: 'note-add' }, input,
-          el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove ' + x.r, onclick: function () { svRoles.splice(i, 1); renderSvRoles(); } }))));
-    });
-  }
-  function addSvRole() {
-    var v = $('sv-role-new').value.trim();
-    if (!v) return;
-    svRoles.push({ r: v, who: '' });
-    $('sv-role-new').value = '';
-    renderSvRoles();
-  }
-  $('sv-role-add').addEventListener('click', addSvRole);
-  $('sv-role-new').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); addSvRole(); } });
-  $('sv-date').addEventListener('change', function () { if ($('sv-date').value) openService($('sv-date').value); });
-
-  function svFromForm() {
-    return {
-      date: $('sv-date').value, preacher: $('sv-preacher').value.trim(), msg: $('sv-msg').value, topic: $('sv-topic').value.trim(),
-      songs: $('sv-songs').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean),
-      roles: svRoles.map(function (r) { return { r: r.r, who: (r.who || '').trim() }; }),
-      adults: numVal('sv-adults'), kids: numVal('sv-kids'), guests: numVal('sv-guests'), decisions: numVal('sv-decisions'),
-      notes: $('sv-notes').value.trim(), updated: Date.now()
-    };
-  }
-  $('sv-form').addEventListener('submit', async function (ev) {
-    ev.preventDefault();
-    var sv = svFromForm();
-    if (!sv.date) { toast('Pick the date first.'); return; }
-    if (await attempt(function () { return db.doc('services/' + sv.date).set(sv); }, 'Sunday saved')) openService(sv.date);
-  });
-  $('sv-share').addEventListener('click', function () {
-    var sv = svFromForm();
-    if (!sv.date) { toast('Pick the date first.'); return; }
-    var lines = ['Sunday, ' + fmtShort(sv.date)];
-    if (sv.preacher) lines.push('Preaching: ' + sv.preacher);
-    if (svMessage(sv)) lines.push('Message: ' + svMessage(sv));
-    if (sv.songs.length) {
-      lines.push('', 'Songs:');
-      sv.songs.forEach(function (s) { lines.push('• ' + s); });
-    }
-    if (sv.roles.length) {
-      lines.push('', 'Serving:');
-      sv.roles.forEach(function (r) { lines.push('• ' + r.r + ': ' + (r.who || 'still open')); });
-    }
-    lines.push('', 'Thank you for serving!' + (me.name ? ' – ' + me.name : ''));
-    shareText(lines.join('\n'), 'Lineup copied. Paste it into a text to your volunteers.');
-  });
-
-  function renderSunday() {
-    var sum = $('sv-summary');
-    sum.textContent = '';
-    var counted = services.filter(hasCount).sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-    if (counted.length) {
-      var recent = counted.slice(-8);
-      var yearStart = new Date().getFullYear() + '-01-01';
-      var thisYear = services.filter(function (s) { return s.id >= yearStart; });
-      sum.append(
-        statTile(Math.round(recent.reduce(function (s, x) { return s + svTotal(x); }, 0) / recent.length), 'people on average, last ' + plural(recent.length, 'Sunday', 'Sundays')),
-        statTile(thisYear.reduce(function (s, x) { return s + (x.guests || 0); }, 0), 'first-time guests this year'),
-        statTile(thisYear.reduce(function (s, x) { return s + (x.decisions || 0); }, 0), 'salvations and baptisms this year'),
-        countChart(counted.slice(-12).map(function (s) { return { date: s.id, n: svTotal(s) }; }), 'People on Sunday'));
-    }
-    var box = $('sv-log');
-    box.textContent = '';
-    if (!services.length) { box.append(el('div', { class: 'empty', text: 'No Sundays yet. Plan this Sunday above, then add the attendance afterward.' })); return; }
-    services.slice().sort(function (a, b) { return a.id < b.id ? 1 : -1; }).forEach(function (sv) {
-      var open = openRoles(sv);
-      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
-      armDelete(del, function () { attempt(function () { return db.doc('services/' + sv.id).delete(); }, 'Deleted'); });
-      var filled = (sv.roles || []).filter(function (r) { return r.who; });
-      box.append(el('article', { class: 'entry' },
-        el('div', { class: 'entry-top' },
-          el('h3', { text: fmtDate(sv.id) }),
-          el('div', { class: 'meta' },
-            hasCount(sv) ? el('span', { class: 'pill score', text: plural(svTotal(sv), 'person', 'people') }) : null,
-            sv.guests ? el('span', { class: 'pill', text: plural(sv.guests, 'guest', 'guests') }) : null,
-            sv.decisions ? el('span', { class: 'pill', text: plural(sv.decisions, 'decision', 'decisions') }) : null)),
-        sv.preacher || svMessage(sv) ? el('p', { text: [sv.preacher, svMessage(sv)].filter(Boolean).join(' · ') }) : null,
-        sv.id >= today() && open.length ? el('p', { class: 'status-line warn', text: plural(open.length, 'job', 'jobs') + ' still open: ' + open.map(function (r) { return r.r; }).join(', ') }) : null,
-        filled.length ? el('details', {}, el('summary', { text: 'Volunteers (' + filled.length + ')' }),
-          el('p', { text: filled.map(function (r) { return r.r + ': ' + r.who; }).join('\n') })) : null,
-        (sv.songs || []).length ? el('details', {}, el('summary', { text: 'Songs (' + sv.songs.length + ')' }), el('p', { text: sv.songs.join('\n') })) : null,
-        sv.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), sv.notes) : null,
-        el('div', { class: 'entry-actions' },
-          el('button', { class: 'btn small', type: 'button', text: 'Open', onclick: function () { openService(sv.id); $('sv-form').scrollIntoView({ behavior: 'smooth' }); } }),
-          del)));
-    });
-  }
-
   /* ---------- youth group ---------- */
   var DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var ynSel = new Set(), editingNight = null, editingStudent = null;
@@ -3461,349 +3189,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     if (ok) resetStudentForm();
   });
 
-  /* ---------- events and trips ---------- */
-  var EVENT_KINDS = ['Camp', 'Retreat', 'Mission trip', 'Outreach', 'Fellowship', 'Conference', 'Other'];
-  var DEFAULT_EVENT_TODO = ['Reserve the place', 'Announce it', 'Collect payments and permission slips', 'Line up drivers and chaperones', 'Plan the schedule', 'Send the packing list'];
-  var EVENT_FIELDS = ['name', 'kind', 'start', 'end', 'place', 'due', 'notes'];
-  var editingEvent = null, evOpen = new Set();
-
-  EVENT_KINDS.forEach(function (k) { $('ev-kind').append(el('option', { value: k, text: k })); });
-
-  function evEnd(e) { return e.end || e.start || ''; }
-  function evWhen(e) {
-    if (!e.start) return 'Date not set';
-    return fmtDate(e.start) + (e.end && e.end !== e.start ? ' – ' + fmtDate(e.end) : '');
-  }
-  function evTally(e) {
-    var ps = e.people || [];
-    var paid = ps.reduce(function (s, p) { return s + (p.paid || 0); }, 0);
-    return { n: ps.length, paid: paid, owed: e.cost ? e.cost * ps.length : 0,
-      slips: ps.filter(function (p) { return !p.slip; }).length, med: ps.filter(function (p) { return !p.med; }).length };
-  }
-  function evTallyText(e) {
-    var t = evTally(e), bits = [plural(t.n, 'signed up', 'signed up')];
-    if (e.cost) bits.push(money(t.paid) + ' of ' + money(t.owed) + ' paid');
-    if (t.n && t.slips) bits.push(plural(t.slips, 'permission slip', 'permission slips') + ' missing');
-    if (t.n && t.med) bits.push(plural(t.med, 'medical form', 'medical forms') + ' missing');
-    return bits.join(' · ');
-  }
-  function saveEvent(e, patch) { return attempt(function () { return db.doc('events/' + e.id).update(patch); }); }
-
-  function signupsEl(e) {
-    var people = (e.people || []).map(function (p) { return Object.assign({}, p); });
-    function save() { return saveEvent(e, { people: people }); }
-    var box = el('div', { class: 'signups' });
-    people.forEach(function (p, i) {
-      var paid = el('input', { type: 'number', min: '0', step: '0.01', inputmode: 'decimal', placeholder: '0', 'aria-label': 'Paid by ' + p.name, value: p.paid ? String(p.paid) : '' });
-      paid.addEventListener('change', function () { p.paid = Math.max(0, Number(paid.value) || 0); save(); });
-      function toggle(key, label) {
-        return el('button', { class: 'chip', type: 'button', 'aria-pressed': p[key] ? 'true' : 'false', text: (p[key] ? '✓ ' : '') + label,
-          onclick: function () { p[key] = !p[key]; save(); } });
-      }
-      box.append(el('div', { class: 'signup' },
-        el('div', { class: 'signup-top' }, el('strong', { text: p.name }),
-          el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove ' + p.name, onclick: function () { people.splice(i, 1); save(); } })),
-        el('div', { class: 'chips', style: 'align-items:center' },
-          toggle('slip', 'Permission slip'), toggle('med', 'Medical form'),
-          el('label', { style: 'display:flex;align-items:center;gap:6px' }, 'Paid $', paid),
-          e.cost && (p.paid || 0) >= e.cost ? el('span', { class: 'pill yes', text: 'Paid in full' }) : null)));
-    });
-    var input = el('input', { type: 'text', id: 'ev-add-' + e.id, autocomplete: 'off', placeholder: 'Name', 'aria-label': 'Sign up someone for ' + e.name, list: 'ev-names' });
-    function add() {
-      var v = input.value.trim();
-      if (!v) return;
-      people.push({ name: v, paid: 0, slip: false, med: false });
-      save().then(function () { var n = $('ev-add-' + e.id); if (n) n.focus(); });
-    }
-    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); add(); } });
-    box.append(el('div', { class: 'note-add' }, input, el('button', { class: 'btn small', type: 'button', text: 'Sign up', onclick: add })));
-    return box;
-  }
-  function eventText(e) {
-    var lines = [e.name + (e.kind && e.kind !== 'Other' ? ' (' + e.kind + ')' : ''), 'When: ' + evWhen(e)];
-    if (e.place) lines.push('Where: ' + e.place);
-    if (e.cost) lines.push('Cost: ' + money(e.cost) + ' per person');
-    if (e.due) lines.push('Payment and permission slips due: ' + fmtDate(e.due));
-    if (e.notes) lines.push('', e.notes);
-    lines.push('', 'Let me know if you are coming!' + (me.name ? ' – ' + me.name : ''));
-    return lines.join('\n');
-  }
-  function openDetails(key, summary, body) {
-    return el('details', { open: evOpen.has(key), ontoggle: function (ev) { if (ev.target.open) evOpen.add(key); else evOpen.delete(key); } },
-      el('summary', { text: summary }), el('div', { style: 'margin-top:8px' }, body));
-  }
-  function eventEl(e) {
-    var t = evTally(e), past = evEnd(e) && evEnd(e) < today();
-    var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
-    armDelete(del, function () { attempt(function () { return db.doc('events/' + e.id).delete(); }, 'Deleted'); });
-    var todo = (e.todo || []).map(function (x) { return Object.assign({}, x); });
-    var left = todo.filter(function (x) { return !x.done; }).length;
-    var when = !e.start ? null : e.start <= today() && evEnd(e) >= today() ? 'happening now' : inDays(e.start);
-    var dueSoon = !past && e.due && e.due >= today() && t.n && (t.slips || (e.cost && t.paid < t.owed));
-    return el('article', { class: 'entry' },
-      el('div', { class: 'entry-top' },
-        el('h3', { text: e.name }),
-        el('div', { class: 'meta' }, e.kind ? el('span', { class: 'pill', text: e.kind }) : null, when && !past ? el('span', { class: 'pill score', text: when }) : null)),
-      el('p', { class: 'status-line', text: evWhen(e) + (e.place ? ' · ' + e.place : '') }),
-      el('p', { text: evTallyText(e) }),
-      dueSoon ? el('p', { class: 'status-line warn', text: 'Payments and forms due ' + fmtShort(e.due) + ' (' + inDays(e.due) + ')' }) : null,
-      e.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Details' }), e.notes) : null,
-      openDetails(e.id + ':people', 'Sign-ups (' + t.n + ')', signupsEl(e)),
-      openDetails(e.id + ':todo', 'To-do and packing' + (todo.length ? ' (' + left + ' left)' : ''),
-        checklistEl(todo, 'ev-t-' + e.id + '-', function (items) { return saveEvent(e, { todo: items }); })),
-      el('div', { class: 'entry-actions' },
-        el('button', { class: 'btn small', type: 'button', text: 'Share details', onclick: function () { shareText(eventText(e), 'Details copied. Paste them into a text or email.'); } }),
-        el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadEvent(e); } }),
-        del));
-  }
-  function renderEvents() {
-    var box = $('ev-log');
-    box.textContent = '';
-    var names = new Set();
-    students.concat(teens).forEach(function (p) { if (p.name) names.add(p.name); });
-    events.forEach(function (e) { (e.people || []).forEach(function (p) { names.add(p.name); }); });
-    var dl = $('ev-names') || el('datalist', { id: 'ev-names' });
-    dl.textContent = '';
-    Array.from(names).sort().forEach(function (n) { dl.append(el('option', { value: n })); });
-    if (!dl.isConnected) $('area-events').append(dl);
-    var t = today();
-    var up = events.filter(function (e) { return !evEnd(e) || evEnd(e) >= t; }).sort(function (a, b) { return (a.start || '9') < (b.start || '9') ? -1 : 1; });
-    var past = events.filter(function (e) { return evEnd(e) && evEnd(e) < t; }).sort(function (a, b) { return a.start < b.start ? 1 : -1; });
-    if (!up.length) box.append(el('div', { class: 'empty', text: events.length ? 'Nothing coming up. Add your next event above.' : 'No events yet. Add a camp, retreat, outreach or trip above to track sign-ups, payments and forms.' }));
-    up.forEach(function (e) { box.append(eventEl(e)); });
-    if (past.length) box.append(el('details', {}, el('summary', { text: 'Past events (' + past.length + ')' }), el('div', { class: 'log', style: 'margin-top:12px' }, past.map(eventEl))));
-  }
-
-  function resetEventForm() {
-    editingEvent = null;
-    EVENT_FIELDS.forEach(function (f) { $('ev-' + f).value = ''; });
-    $('ev-kind').value = EVENT_KINDS[0];
-    setNum('ev-cost', null);
-    $('ev-title').textContent = 'Add an event or trip';
-    $('ev-save').textContent = 'Add event';
-    $('ev-cancel').hidden = true;
-  }
-  function loadEvent(e) {
-    editingEvent = e;
-    EVENT_FIELDS.forEach(function (f) { $('ev-' + f).value = e[f] || ''; });
-    $('ev-kind').value = e.kind || 'Other';
-    setNum('ev-cost', e.cost);
-    $('ev-title').textContent = 'Edit ' + e.name;
-    $('ev-save').textContent = 'Save changes';
-    $('ev-cancel').hidden = false;
-    $('ev-form').scrollIntoView({ behavior: 'smooth' });
-  }
-  $('ev-cancel').addEventListener('click', resetEventForm);
-  $('ev-start').addEventListener('change', function () { if (!$('ev-end').value || $('ev-end').value < $('ev-start').value) $('ev-end').value = $('ev-start').value; });
-  $('ev-form').addEventListener('submit', async function (ev) {
-    ev.preventDefault();
-    var data = {};
-    EVENT_FIELDS.forEach(function (f) { data[f] = $('ev-' + f).value.trim(); });
-    data.cost = numVal('ev-cost');
-    if (!data.name) { toast('Give the event a name first.'); return; }
-    if (data.start && data.end && data.end < data.start) data.end = data.start;
-    var ok;
-    if (editingEvent) ok = await attempt(function () { return db.doc('events/' + editingEvent.id).update(data); }, 'Saved');
-    else {
-      data.people = [];
-      data.todo = DEFAULT_EVENT_TODO.map(function (t) { return { t: t, done: false }; });
-      data.created = Date.now();
-      var ref = db.collection('events').doc();
-      evOpen.add(ref.id + ':people');
-      ok = await attempt(function () { return ref.set(data); }, 'Added ' + data.name);
-    }
-    if (ok) resetEventForm();
-  });
-
-  /* ---------- pastoral care ---------- */
-  var CARE_KINDS = ['Hospital', 'Illness', 'Grief', 'Homebound', 'New to church', 'Counseling', 'Family', 'Prayer', 'Other'];
-  var TOUCH_KINDS = ['Visit', 'Call', 'Text', 'Card', 'Meeting', 'Prayed'];
-  var NEXT_OPTS = [['3', 'Next: in 3 days'], ['7', 'Next: in a week'], ['14', 'Next: in 2 weeks'], ['30', 'Next: in a month'], ['', 'No next date']];
-  var CARE_FILTERS = ['Active', 'Resolved', 'All'];
-  var CARE_FIELDS = ['name', 'phone', 'why', 'next', 'notes'];
-  var editingCare = null, crFilter = 'Active';
-
-  CARE_KINDS.forEach(function (k) { $('cr-why').append(el('option', { value: k, text: k })); });
-
-  function careDue(c) { return !c.closed && c.next && c.next <= today(); }
-  function touchesSince(from) {
-    return care.reduce(function (n, c) { return n + (c.touches || []).filter(function (t) { return t.d >= from; }).length; }, 0);
-  }
-  function careEl(c) {
-    var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
-    armDelete(del, function () { attempt(function () { return db.doc('care/' + c.id).delete(); }, 'Deleted'); });
-    var touches = c.touches || [];
-    var kind = el('select', { 'aria-label': 'How you reached out' }, TOUCH_KINDS.map(function (k) { return el('option', { value: k, text: k }); }));
-    var next = el('select', { 'aria-label': 'Next follow-up' }, NEXT_OPTS.map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
-    next.value = '7';
-    var note = el('input', { type: 'text', autocomplete: 'off', placeholder: 'What happened? (optional)', 'aria-label': 'Note' });
-    var nextPill = null;
-    if (!c.closed && c.next) {
-      var n = daysSince(c.next);
-      nextPill = el('span', { class: n >= 0 ? 'pill score' : 'pill', text: n > 0 ? plural(n, 'day', 'days') + ' overdue' : n === 0 ? 'Due today' : 'Next: ' + fmtShort(c.next) });
-    }
-    return el('article', { class: 'entry' + (careDue(c) ? ' totw' : '') },
-      el('div', { class: 'entry-top' },
-        el('h3', { text: c.name }),
-        el('div', { class: 'meta' }, c.why ? el('span', { class: 'pill', text: c.why }) : null, nextPill,
-          c.closed ? el('span', { class: 'pill yes', text: 'Resolved ' + fmtShort(c.closed) }) : null)),
-      c.phone ? el('div', { class: 'entry-actions', style: 'align-items:center' }, el('span', { class: 'status-line', text: c.phone }), phoneBtns(c.phone)) : null,
-      touches.length ? el('p', { class: 'status-line', text: 'Last: ' + touches[0].kind + ' ' + fmtShort(touches[0].d) + (touches[0].note ? ' · ' + touches[0].note : '') }) : el('p', { class: 'hint', text: 'No visits or calls logged yet.' }),
-      c.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), c.notes) : null,
-      touches.length > 1 ? el('details', {}, el('summary', { text: 'History (' + touches.length + ')' }),
-        el('div', { class: 'notes' }, touches.map(function (t) {
-          return el('div', { class: 'note' }, el('time', { text: t.kind + ' · ' + fmtDate(t.d) }), t.note ? el('p', { style: 'margin:0', text: t.note }) : null);
-        }))) : null,
-      c.closed ? null : el('div', { class: 'touch-add' }, kind, next, note,
-        el('button', { class: 'btn small primary', type: 'button', text: 'Log it', onclick: function () {
-          var t = { d: today(), kind: kind.value, note: note.value.trim() };
-          attempt(function () { return db.doc('care/' + c.id).update({ touches: [t].concat(touches), next: next.value ? addDays(today(), Number(next.value)) : '' }); }, 'Logged');
-        } })),
-      el('div', { class: 'entry-actions' },
-        el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadCare(c); } }),
-        el('button', { class: 'btn small', type: 'button', text: c.closed ? 'Reopen' : 'Resolved', onclick: function () {
-          attempt(function () { return db.doc('care/' + c.id).update({ closed: c.closed ? null : today() }); }, c.closed ? 'Reopened' : 'Marked resolved');
-        } }),
-        del));
-  }
-  function renderCare() {
-    var fb = $('cr-filter');
-    fb.textContent = '';
-    CARE_FILTERS.forEach(function (f) {
-      fb.append(el('button', { class: 'chip', type: 'button', text: f, 'aria-pressed': crFilter === f ? 'true' : 'false', onclick: function () { crFilter = f; renderCare(); } }));
-    });
-    var due = care.filter(careDue).sort(function (a, b) { return a.next < b.next ? -1 : 1; });
-    var nb = $('cr-due');
-    nb.textContent = '';
-    if (due.length) {
-      nb.append(el('div', { class: 'card nudge' },
-        el('p', { text: plural(due.length, 'person', 'people') + ' to follow up with today' }),
-        el('p', { style: 'font-weight:400', text: due.map(function (c) { return c.name; }).join(', ') })));
-    }
-    var q = $('cr-search').value.trim().toLowerCase();
-    var list = care.filter(function (c) {
-      if (crFilter === 'Active' && c.closed) return false;
-      if (crFilter === 'Resolved' && !c.closed) return false;
-      return !q || (c.name + ' ' + (c.why || '') + ' ' + (c.notes || '')).toLowerCase().indexOf(q) > -1;
-    }).sort(function (a, b) {
-      if (!!a.closed !== !!b.closed) return a.closed ? 1 : -1;
-      return (a.next || '9999') < (b.next || '9999') ? -1 : (a.next || '9999') > (b.next || '9999') ? 1 : (a.name || '').localeCompare(b.name || '');
-    });
-    var box = $('cr-log');
-    box.textContent = '';
-    if (!list.length) {
-      box.append(el('div', { class: 'empty', text: care.length ? 'No one here.' : 'No one yet. Add people you are visiting, calling or praying with, and set when to follow up.' }));
-      return;
-    }
-    list.forEach(function (c) { box.append(careEl(c)); });
-  }
-  $('cr-search').addEventListener('input', renderCare);
-
-  function resetCareForm() {
-    editingCare = null;
-    CARE_FIELDS.forEach(function (f) { $('cr-' + f).value = ''; });
-    $('cr-why').value = CARE_KINDS[0];
-    $('cr-next').value = today();
-    $('cr-title').textContent = 'Add someone to care for';
-    $('cr-save').textContent = 'Add person';
-    $('cr-cancel').hidden = true;
-  }
-  function loadCare(c) {
-    editingCare = c;
-    CARE_FIELDS.forEach(function (f) { $('cr-' + f).value = c[f] || ''; });
-    $('cr-title').textContent = 'Edit ' + c.name;
-    $('cr-save').textContent = 'Save changes';
-    $('cr-cancel').hidden = false;
-    $('cr-form').scrollIntoView({ behavior: 'smooth' });
-  }
-  $('cr-cancel').addEventListener('click', resetCareForm);
-  $('cr-form').addEventListener('submit', async function (ev) {
-    ev.preventDefault();
-    var data = {};
-    CARE_FIELDS.forEach(function (f) { data[f] = $('cr-' + f).value.trim(); });
-    if (!data.name) { toast('Add their name first.'); return; }
-    var ok = editingCare
-      ? await attempt(function () { return db.doc('care/' + editingCare.id).update(data); }, 'Saved')
-      : await attempt(function () { data.touches = []; data.closed = null; data.created = Date.now(); return db.collection('care').doc().set(data); }, 'Added ' + data.name);
-    if (ok) resetCareForm();
-  });
-
-  /* ---------- home ---------- */
-  function homeItem(label, lines, btnText, go) {
-    return el('div', { class: 'today-item' },
-      el('span', { class: 'lbl', text: label }),
-      lines.filter(Boolean).map(function (l) { return typeof l === 'string' ? el('p', { text: l }) : l; }),
-      btnText ? el('div', { class: 'actions' }, el('button', { class: 'btn small', type: 'button', text: btnText, onclick: go })) : null);
-  }
-  function renderHome() {
-    var box = $('hm-today');
-    box.textContent = '';
-    var t = today(), items = [];
-
-    var sunday = nextDow(0), sv = serviceFor(sunday);
-    items.push(homeItem('Sunday · ' + fmtShort(sunday) + (sunday === t ? ' · today' : ''),
-      sv ? [sv.preacher ? 'Preaching: ' + sv.preacher : null, svMessage(sv) ? 'Message: ' + svMessage(sv) : null,
-        openRoles(sv).length ? el('p', { class: 'status-line warn', text: plural(openRoles(sv).length, 'job', 'jobs') + ' still open: ' + openRoles(sv).map(function (r) { return r.r; }).join(', ') }) : (sv.roles || []).length ? 'Every volunteer job is filled.' : null]
-        : ['Not planned yet.'],
-      sv ? 'Open Sunday' : 'Plan Sunday', function () { showArea('sunday'); openService(sunday); }));
-
-    var wed = nextWednesday(), p = plans[wed], lesson = p && p.lesson && msgById(p.lesson);
-    items.push(homeItem('Hangtime · ' + fmtShort(wed) + (wed === t ? ' · today' : ''),
-      p && (p.word || lesson) ? [p.word ? 'Main idea: ' + p.word : null, lesson ? 'Lesson: ' + lesson.title : null] : ['Not planned yet.'],
-      'Open Hangtime plan', function () { showTab('plan'); }));
-
-    var yd = youthDay(), ns = nightsAsc(), lastNight = ns[ns.length - 1], fu = youthFollowups().length;
-    items.push(homeItem(yd == null ? 'Youth group' : 'Youth group · ' + fmtShort(nextDow(yd)) + (nextDow(yd) === t ? ' · today' : ''),
-      [yd == null ? 'Set which day youth group meets on the Youth page.' : null,
-        lastNight ? 'Last time: ' + plural(nightCount(lastNight), 'student', 'students') + ' on ' + fmtShort(lastNight.id) : null,
-        fu ? el('p', { class: 'status-line warn', text: plural(fu, 'student', 'students') + ' to reach out to' }) : null],
-      'Open Youth', function () { showArea('youth'); showYouth('nights'); }));
-
-    var soon = events.filter(function (e) { return e.start && evEnd(e) >= t && e.start <= addDays(t, 60); }).sort(function (a, b) { return a.start < b.start ? -1 : 1; });
-    if (soon.length) {
-      items.push(homeItem('Events · next 60 days', soon.slice(0, 3).map(function (e) {
-        return el('p', {}, el('strong', { text: e.name }), ' · ' + (e.start <= t ? 'happening now' : inDays(e.start)) + ' · ' + evTallyText(e));
-      }), 'Open Events', function () { showArea('events'); }));
-    }
-
-    var due = care.filter(careDue);
-    items.push(homeItem('Care',
-      [due.length ? el('p', { class: 'status-line warn', text: plural(due.length, 'person', 'people') + ' to follow up with today: ' + due.map(function (c) { return c.name; }).join(', ') })
-        : care.some(function (c) { return !c.closed; }) ? 'No one due today.' : 'Add people you are visiting or calling to get reminders here.'],
-      'Open Care', function () { showArea('care'); }));
-
-    var bdays = [];
-    [[kids, 'Hangtime'], [teens, 'Hangtime teen'], [students, 'Youth']].forEach(function (g) {
-      g[0].forEach(function (x) { var n = bdayIn(x.bday); if (n != null && n <= 7) bdays.push({ name: x.name, n: n, where: g[1] }); });
-    });
-    if (bdays.length) {
-      items.push(homeItem('Birthdays this week', bdays.sort(function (a, b) { return a.n - b.n; }).map(function (b) {
-        return b.name + ' (' + b.where + ') · ' + (b.n === 0 ? 'today!' : b.n === 1 ? 'tomorrow' : 'in ' + b.n + ' days');
-      })));
-    }
-    var open = prayers.filter(function (x) { return !x.answered; }).length;
-    if (open) items.push(homeItem('Prayer', [plural(open, 'open request', 'open requests') + '. They are listed below.']));
-    box.append(el('div', { class: 'card' }, el('h2', { style: 'margin:0', text: 'This week' }), el('div', { class: 'today' }, items)));
-
-    var from = addDays(t, -30);
-    var svs = services.filter(function (s) { return s.id >= from && s.id <= t && hasCount(s); });
-    var yns = ynights.filter(function (n) { return n.id >= from && n.id <= t; });
-    var hws = weeks.filter(function (w) { return w.date >= from && w.kids != null; });
-    var decisions = services.filter(function (s) { return s.id >= from; }).reduce(function (n, s) { return n + (s.decisions || 0); }, 0) +
-      yns.reduce(function (n, x) { return n + (x.decisions || 0); }, 0) +
-      weeks.filter(function (w) { return w.date >= from; }).reduce(function (n, w) { return n + (w.decisions || 0); }, 0);
-    var st = $('hm-stats');
-    st.textContent = '';
-    st.append(
-      statTile(svs.length ? Math.round(svs.reduce(function (n, s) { return n + svTotal(s); }, 0) / svs.length) : '—', 'people on Sundays, on average'),
-      statTile(yns.length ? Math.round(yns.reduce(function (n, x) { return n + nightCount(x); }, 0) / yns.length) : '—', 'students at youth, on average'),
-      statTile(hws.length ? Math.round(hws.reduce(function (n, w) { return n + w.kids; }, 0) / hws.length) : '—', 'kids at Hangtime, on average'),
-      statTile(services.filter(function (s) { return s.id >= from; }).reduce(function (n, s) { return n + (s.guests || 0); }, 0), 'first-time guests on Sundays'),
-      statTile(decisions, decisions === 1 ? 'faith decision' : 'faith decisions'),
-      statTile(touchesSince(from), 'visits, calls and cards'),
-      statTile(prayers.filter(function (x) { return x.answered && x.answered >= from; }).length, 'prayers answered'));
-  }
-
   /* ---------- backup ---------- */
   function lastBackup() {
     try { return Number(localStorage.getItem(BACKUP_KEY)) || 0; } catch (e) { return 0; }
@@ -3812,7 +3197,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   function renderBackup() {
     var last = lastBackup();
     var total = teens.length + weeks.length + msgs.length + Object.keys(plans).length + kids.length + prayers.length + games.length +
-      services.length + ynights.length + students.length + events.length + care.length;
+      ynights.length + students.length;
     var days = last ? Math.floor((Date.now() - last) / 86400000) : null;
     var line = $('bk-status');
     if (!last) {
@@ -3831,28 +3216,26 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       prayers.length + (prayers.length === 1 ? ' prayer request, ' : ' prayer requests, ') +
       games.length + (games.length === 1 ? ' game, ' : ' games, ') +
       plural(responses.length, 'teen check-in, ', 'teen check-ins, ') +
-      plural(services.length, 'Sunday, ', 'Sundays, ') + plural(ynights.length, 'youth night, ', 'youth nights, ') +
-      plural(students.length, 'student, ', 'students, ') + plural(events.length, 'event, ', 'events, ') +
-      plural(care.length, 'person in Care.', 'people in Care.');
+      plural(ynights.length, 'youth night, ', 'youth nights, ') + plural(students.length, 'youth student.', 'youth students.');
   }
 
   function backupReminder() {
-    var total = teens.length + weeks.length + msgs.length + services.length + ynights.length + students.length + events.length + care.length;
+    var total = teens.length + weeks.length + msgs.length + ynights.length + students.length;
     var last = lastBackup();
     if (total && (!last || Date.now() - last > 30 * 86400000)) {
-      banner(last ? 'It has been over a month since your last backup. Open Home to save one.' : 'Tip: save a backup from Home so your entries are safe if anything happens to this phone.');
+      banner(last ? 'It has been over a month since your last backup. Open the Ministry tab under Hangtime to save one.' : 'Tip: save a backup from the Ministry tab under Hangtime so your entries are safe if anything happens to this phone.');
     }
   }
 
   $('bk-export').addEventListener('click', async function () {
     var payload = Object.assign({ app: 'hangtime-tracker', version: 1, exported: new Date().toISOString() }, store.dump());
-    var name = 'shepherd-backup-' + iso(new Date()) + '.json';
+    var name = 'nextgen-backup-' + iso(new Date()) + '.json';
     var text = JSON.stringify(payload, null, 2);
     var file = null;
     try { file = new File([text], name, { type: 'application/json' }); } catch (e) { /* older browsers */ }
     var saved = false;
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Shepherd backup' }); saved = true; }
+      try { await navigator.share({ files: [file], title: 'Next Gen backup' }); saved = true; }
       catch (e) { if (e && e.name === 'AbortError') return; }
     }
     if (!saved) {
@@ -3935,7 +3318,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       if (document.activeElement !== $('me-name')) $('me-name').value = me.name || '';
       if (document.activeElement !== $('yo-day')) $('yo-day').value = youthCfg.day == null ? '' : String(youthCfg.day);
       if (document.activeElement !== $('yo-time')) $('yo-time').value = youthCfg.time || '';
-      renderHome();
       loaded.settings = true;
       renderFormSettings();
       if (first && settings.sheet) checkForm(true);
@@ -3961,9 +3343,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       loaded.messages = true;
       renderMsgs(); renderBackup(); renderWeeks(); renderPlanLesson();
       if (!editingWeek) { var cur = $('wk-lesson').value; lessonOptions($('wk-lesson'), cur, 'Not recorded'); }
-      lessonOptions($('sv-msg'), $('sv-msg').value, 'None picked');
       lessonOptions($('yn-msg'), $('yn-msg').value, 'None picked');
-      renderSunday(); renderNights(); renderHome();
+      renderNights();
     });
     db.collection('plans').onSnapshot(function (snap) {
       plans = {};
@@ -3974,31 +3355,16 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       renderPlanReminders(); updateRecallQ(); renderNudge();
       renderWeeks(); renderBackup();
     });
-    db.collection('services').onSnapshot(function (snap) {
-      var first = !loaded.services;
-      services = toRows(snap);
-      loaded.services = true;
-      if (first) openService(nextDow(0));
-      renderSunday(); renderSvRoles(); renderHome(); renderBackup();
-    });
     db.collection('students').onSnapshot(function (snap) {
       students = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
-      renderStudents(); renderYnStudents(); renderNights(); renderYouthFollow(); renderEvents(); renderHome(); renderBackup();
+      renderStudents(); renderYnStudents(); renderNights(); renderYouthFollow(); renderBackup();
     });
     db.collection('ynights').onSnapshot(function (snap) {
       var first = !loaded.ynights;
       ynights = toRows(snap);
       loaded.ynights = true;
       if (first) resetNightForm();
-      renderNights(); renderStudents(); renderYouthFollow(); renderHome(); renderBackup();
-    });
-    db.collection('events').onSnapshot(function (snap) {
-      events = toRows(snap);
-      renderEvents(); renderHome(); renderBackup();
-    });
-    db.collection('care').onSnapshot(function (snap) {
-      care = toRows(snap);
-      renderCare(); renderHome(); renderBackup();
+      renderNights(); renderStudents(); renderYouthFollow(); renderBackup();
     });
     backupReminder();
     renderNudge();
@@ -4015,8 +3381,6 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   resetTeenForm();
   resetMsgForm();
   renderAll();
-  resetEventForm();
-  resetCareForm();
   resetStudentForm();
   start();
 
@@ -4025,7 +3389,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   if (TABS.indexOf(hash) > -1) { startArea = 'hangtime'; startTab = hash; }
   else if (AREAS.indexOf(hash) > -1) startArea = hash;
   if (TABS.indexOf(startTab) > -1) curTab = startTab;
-  showArea(AREAS.indexOf(startArea) > -1 ? startArea : 'home');
+  showArea(AREAS.indexOf(startArea) > -1 ? startArea : 'hangtime');
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });

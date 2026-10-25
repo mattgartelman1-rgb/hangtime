@@ -1,7 +1,7 @@
 {
-  "name": "Shepherd",
-  "short_name": "Shepherd",
-  "description": "Plan and track your whole ministry: Sundays, Wednesday Hangtime, youth group, events and trips, and pastoral care.",
+  "name": "Next Gen",
+  "short_name": "Next Gen",
+  "description": "Plan and track Wednesday Hangtime and youth group: nights, students, teens, lessons and follow-ups.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
