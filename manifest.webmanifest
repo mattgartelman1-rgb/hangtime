@@ -1,7 +1,7 @@
 {
-  "name": "Hangtime Tracker",
-  "short_name": "Hangtime",
-  "description": "Log Wednesday Hangtime, your teen volunteers, and your sermons and lessons.",
+  "name": "Ministry Tracker",
+  "short_name": "Ministry",
+  "description": "Plan and track your whole ministry: Sundays, Wednesday Hangtime, youth group, events and trips, and pastoral care.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
