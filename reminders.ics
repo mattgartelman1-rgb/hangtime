@@ -1,0 +1,51 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Hangtime Tracker//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:hangtime-plan@hangtime-tracker
+DTSTAMP:20261025T000000Z
+DTSTART:20261027T190000
+DTEND:20261027T191500
+RRULE:FREQ=WEEKLY;BYDAY=TU
+SUMMARY:Finish the Hangtime plan
+DESCRIPTION:Main idea, lesson, teen jobs and games for tomorrow. Then tap Share plan with teens.
+URL:https://mattgartelman1-rgb.github.io/hangtime/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Finish the Hangtime plan
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:hangtime-door@hangtime-tracker
+DTSTAMP:20261025T000000Z
+DTSTART:20261028T144500
+DTEND:20261028T151500
+RRULE:FREQ=WEEKLY;BYDAY=WE
+SUMMARY:Hangtime: door check-in
+DESCRIPTION:Kids arrive at 3:15. Open the Hangtime app and tap Door check-in.
+URL:https://mattgartelman1-rgb.github.io/hangtime/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Hangtime: door check-in
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:hangtime-log@hangtime-tracker
+DTSTAMP:20261025T000000Z
+DTSTART:20261028T173000
+DTEND:20261028T174500
+RRULE:FREQ=WEEKLY;BYDAY=WE
+SUMMARY:Log Hangtime and rate your teens
+DESCRIPTION:How did it go? Log the week, rate each teen, rate the games, and note if kids remembered the main idea.
+URL:https://mattgartelman1-rgb.github.io/hangtime/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Log Hangtime and rate your teens
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

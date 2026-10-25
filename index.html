@@ -222,6 +222,22 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .resp-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
 .pill.yes { color: var(--good); border-color: currentColor; }
 .pill.no { color: var(--danger); border-color: currentColor; }
+.bar { height: 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.goal { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--bg); }
+.goal-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.goal-head strong { overflow-wrap: anywhere; }
+.goal .bar { background: var(--surface); }
+.totw { border-color: var(--accent); border-width: 2px; }
+.totw .big { font: 700 26px/1.1 var(--font-display); }
+.series-week { display: grid; gap: 8px; padding: 12px; border-radius: 8px; background: var(--bg); }
+.series-week .fields { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.series-week input, .series-week textarea { background: var(--surface); }
+.quiz { display: grid; gap: 10px; padding: 14px; border-radius: 10px; background: var(--bg); text-align: center; }
+.quiz .big { font: 700 28px/1.2 var(--font-display); }
+.door-kid small { display: block; font-size: 12px; font-weight: 500; opacity: .75; margin-top: 2px; }
+.nudge { display: grid; gap: 10px; border-color: var(--accent); border-width: 2px; }
+.nudge p { margin: 0; font-weight: 600; }
 .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
 .x:focus-visible { outline: 2px solid var(--accent); }
 .status-line.warn { color: var(--danger); font-weight: 600; }
@@ -254,6 +270,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   <div id="banner" class="banner" hidden></div>
 
   <section id="panel-plan" class="panel" role="tabpanel" aria-labelledby="tab-plan">
+    <div id="pl-nudge"></div>
     <div id="pl-inbox"></div>
     <div id="pl-remind"></div>
     <form id="pl-form" class="card" novalidate>
@@ -262,6 +279,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         <label for="pl-date">Date<input type="date" id="pl-date"></label>
         <label for="pl-word">One-word main idea<input type="text" id="pl-word" maxlength="40" autocomplete="off" placeholder="e.g. Trust"></label>
       </div>
+      <div id="pl-series"></div>
       <label for="pl-lesson">Lesson<select id="pl-lesson"></select></label>
       <p class="hint" id="pl-lesson-info"></p>
       <label for="pl-arrive">When kids arrive<textarea id="pl-arrive" rows="2" placeholder="e.g. Teens at the door, sign-in table, open gym until 3:30"></textarea></label>
@@ -308,6 +326,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         <legend>How was Hangtime?</legend>
         <div class="rating" id="wk-rating"></div>
       </fieldset>
+      <label for="wk-recall"><span id="wk-recall-q">Did the kids remember last week's main idea?</span><select id="wk-recall">
+        <option value="">Didn't ask</option><option value="Most">Most of them</option><option value="Some">Some of them</option><option value="Few">Few or none</option>
+      </select></label>
       <label class="check" for="wk-taught"><input type="checkbox" id="wk-taught"> I taught this week</label>
       <label for="wk-good">What went well<textarea id="wk-good" rows="2"></textarea></label>
       <label for="wk-improve">What to change next time<textarea id="wk-improve" rows="2"></textarea></label>
@@ -346,6 +367,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <button class="chip" type="button" id="pp-show-kids" aria-pressed="false">Kids</button>
     </div>
     <div id="pp-teens" class="panel" style="padding-top:0">
+    <div id="tn-totw"></div>
     <div id="tn-board"></div>
     <form id="tn-form" class="card" novalidate>
       <h2 id="tn-title">Add a teen volunteer</h2>
@@ -365,6 +387,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </div>
     </div>
     <div id="pp-kids" class="panel" style="padding-top:0" hidden>
+      <div id="kd-names"></div>
       <form id="kd-form" class="card" novalidate>
         <h2 id="kd-title">Add a kid</h2>
         <div class="fields">
@@ -372,6 +395,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           <label for="kd-grade">Grade<input type="text" id="kd-grade" autocomplete="off" placeholder="e.g. 3rd"></label>
           <label for="kd-bday">Birthday<input type="date" id="kd-bday"></label>
         </div>
+        <label for="kd-hint">Memory hint (for learning their name)<input type="text" id="kd-hint" autocomplete="off" placeholder="e.g. red glasses, loves soccer, Ben's little sister"></label>
         <label for="kd-notes">Notes<textarea id="kd-notes" rows="2" placeholder="Parent contact, allergies, birthday, prayer needs"></textarea></label>
         <div class="actions">
           <button class="btn primary" type="submit" id="kd-save">Add kid</button>
@@ -388,7 +412,21 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   <section id="panel-messages" class="panel" role="tabpanel" aria-labelledby="tab-messages" hidden>
     <div class="subnav chips">
       <button class="chip" type="button" id="lib-show-lessons" aria-pressed="true">Lessons</button>
+      <button class="chip" type="button" id="lib-show-series" aria-pressed="false">Series</button>
       <button class="chip" type="button" id="lib-show-games" aria-pressed="false">Games</button>
+    </div>
+    <div id="lib-series" class="panel" style="padding-top:0" hidden>
+      <form id="sr-form" class="card" novalidate>
+        <h2>Plan a lesson series</h2>
+        <p class="hint">Map out several Wednesdays at once. Each week's plan picks up its main idea and lesson from the series.</p>
+        <div class="fields">
+          <label for="sr-name">Series name<input type="text" id="sr-name" autocomplete="off" placeholder="e.g. Faith Over Fear"></label>
+          <label for="sr-start">First Wednesday<input type="date" id="sr-start"></label>
+          <label for="sr-count">How many weeks<select id="sr-count"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select></label>
+        </div>
+        <div class="actions"><button class="btn primary" type="submit">Create series</button></div>
+      </form>
+      <div id="sr-log" class="log"></div>
     </div>
     <div id="lib-lessons" class="panel" style="padding-top:0">
     <form id="ms-form" class="card" novalidate>
@@ -461,6 +499,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </form>
 
     <div class="card">
+      <h2>Reminders</h2>
+      <p>Add 3 weekly alerts to your iPhone Calendar: <strong>Tuesday 7pm</strong> finish your plan, <strong>Wednesday 2:45pm</strong> door check-in, and <strong>Wednesday 5:30pm</strong> log Hangtime and rate your teens. You can change the times in Calendar afterward.</p>
+      <div class="actions"><a class="btn primary" id="rm-add" href="reminders.ics" target="_blank" rel="noopener" style="text-decoration:none">Add reminders to my Calendar</a></div>
+      <p class="hint">If nothing happens, open Safari and go to mattgartelman1-rgb.github.io/hangtime/reminders.ics, then tap Add All.</p>
+    </div>
+
+    <div class="card">
       <h2>Teen check-in form</h2>
       <p>Teens fill out your Google Form, and their answers show up on the Plan tab, on their People card, and next to their name in Teen jobs.</p>
       <label for="fm-form">Form link (the one you send to teens)<input type="text" id="fm-form" autocomplete="off" inputmode="url" placeholder="https://forms.gle/..."></label>
@@ -510,7 +555,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   var KINDS = ['Hangtime lesson', 'Sermon', 'Youth message', 'Devotional'];
   var LABELS = ['Rough', 'Okay', 'Good', 'Great', 'Standout'];
-  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings'];
+  var COLLECTIONS = ['teens', 'weeks', 'messages', 'plans', 'kids', 'prayers', 'attendance', 'games', 'responses', 'settings', 'series'];
   var TAB_KEY = 'hangtime-tab';
   var STORE_KEY = 'hangtime-tracker-v1';
   var BACKUP_KEY = 'hangtime-last-backup';
@@ -583,7 +628,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   var teens = [], weeks = [], msgs = [], plans = {}, kids = [], prayers = [];
   var kidSel = new Set();
   var attendance = {};
-  var responses = [], settings = {};
+  var responses = [], settings = {}, series = [];
+  var quiz = null;
   var games = [], gameSel = new Set(), funSel = {}, editingGame = null, gameKind = 'All';
   var GAME_KINDS = ['Active', 'Team', 'Relay', 'Icebreaker', 'Quiet', 'Bible game'];
   var GAME_PLACES = ['Gym', 'Outside', 'Room', 'Anywhere'];
@@ -972,8 +1018,9 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     if (!kids.length && !q) grid.append(el('p', { class: 'hint', text: 'Type a kid\'s name above to add them and check them in.' }));
     shown.forEach(function (k) {
       var on = all.indexOf(k.id) > -1;
-      grid.append(el('button', { class: 'door-kid', type: 'button', 'aria-pressed': on ? 'true' : 'false', text: k.name,
-        onclick: function () { if (!on) $('door-search').value = ''; setDoor(k.id, !on); renderDoor(); } }));
+      grid.append(el('button', { class: 'door-kid', type: 'button', 'aria-pressed': on ? 'true' : 'false',
+        onclick: function () { if (!on) $('door-search').value = ''; setDoor(k.id, !on); renderDoor(); } },
+        k.name, !k.known && k.hint ? el('small', { text: k.hint }) : null));
     });
   }
   async function setDoor(id, on) {
@@ -1034,7 +1081,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
             el('span', { class: 'pill score', text: w.rating + '/5 ' + LABELS[w.rating - 1] }),
             w.kids != null ? el('span', { class: 'pill', text: w.kids + ' kids' }) : null,
             w.taught ? el('span', { class: 'pill', text: 'I taught' }) : null,
-            w.decisions ? el('span', { class: 'pill', text: w.decisions + (w.decisions === 1 ? ' faith decision' : ' faith decisions') }) : null)),
+            w.decisions ? el('span', { class: 'pill', text: w.decisions + (w.decisions === 1 ? ' faith decision' : ' faith decisions') }) : null,
+            w.recall ? el('span', { class: 'pill', text: 'Main idea: ' + w.recall.toLowerCase() + ' remembered' }) : null)),
         (function () {
           var fresh = kidListFor(w.date).filter(function (id) { return kidVisits(id)[0] === w.date; })
             .map(function (id) { var k = kids.find(function (x) { return x.id === id; }); return k && k.name; }).filter(Boolean);
@@ -1052,6 +1100,16 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
           el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadWeek(w); } }), del)
       ));
     });
+  }
+
+  // The one-word main idea from the most recent plan before a date.
+  function prevWord(date) {
+    var ds = Object.keys(plans).filter(function (d) { return d < date && plans[d].word; }).sort();
+    return ds.length ? { date: ds[ds.length - 1], word: plans[ds[ds.length - 1]].word } : null;
+  }
+  function updateRecallQ() {
+    var pw = prevWord($('wk-date').value || iso(new Date()));
+    $('wk-recall-q').textContent = pw ? 'Did the kids remember last week\'s main idea, "' + pw.word + '"?' : 'Did the kids remember last week\'s main idea?';
   }
 
   function updateWeekHint() {
@@ -1079,6 +1137,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('wk-improve').value = '';
     lessonOptions($('wk-lesson'), '', 'Not recorded');
     document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = false; });
+    $('wk-recall').value = '';
+    updateRecallQ();
     prefillFromPlan();
     renderWeekTeens();
     renderWeekGames();
@@ -1125,13 +1185,15 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('wk-improve').value = w.improve || '';
     lessonOptions($('wk-lesson'), w.lesson || '', 'Not recorded');
     document.querySelectorAll('input[name=rating]').forEach(function (r) { r.checked = Number(r.value) === w.rating; });
+    $('wk-recall').value = w.recall || '';
+    updateRecallQ();
     renderWeekTeens();
     renderWeekGames();
     updateWeekHint();
     $('wk-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  $('wk-date').addEventListener('change', function () { prefillFromPlan(); renderWeekTeens(); updateWeekHint(); });
+  $('wk-date').addEventListener('change', function () { prefillFromPlan(); renderWeekTeens(); updateWeekHint(); updateRecallQ(); });
   $('wk-cancel').addEventListener('click', resetWeekForm);
   $('wk-form').addEventListener('submit', async function (ev) {
     ev.preventDefault();
@@ -1154,7 +1216,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       kidList: Array.from(kidSel),
       games: Array.from(gameSel),
       fun: {},
-      decisions: $('wk-decisions').value === '' ? 0 : Number($('wk-decisions').value)
+      decisions: $('wk-decisions').value === '' ? 0 : Number($('wk-decisions').value),
+      recall: $('wk-recall').value
     };
     presentSel.forEach(function (id) { if (leadSel[id]) data.leads[id] = leadSel[id]; });
     gameSel.forEach(function (id) { if (funSel[id]) data.fun[id] = funSel[id]; });
@@ -1169,7 +1232,115 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   /* ---------- teens ---------- */
   function avg(a) { return a.reduce(function (s, v) { return s + v; }, 0) / a.length; }
 
+  /* teen growth goals: t.goals = [{ id, text, steps: [{ t, done }], done: date|null, created }] */
+  function saveGoals(t, goals, msg) {
+    return attempt(function () { return db.doc('teens/' + t.id).update({ goals: goals }); }, msg);
+  }
+  function teenGoalsEl(t) {
+    var goals = (t.goals || []).slice();
+    var active = goals.filter(function (g) { return !g.done; });
+    var reached = goals.filter(function (g) { return g.done; });
+    function copy() { return JSON.parse(JSON.stringify(goals)); }
+    function goalEl(g) {
+      var steps = g.steps || [];
+      var doneN = steps.filter(function (x) { return x.done; }).length;
+      var stepInput = el('input', { type: 'text', autocomplete: 'off', placeholder: 'Add a step', 'aria-label': 'Add a step to ' + g.text });
+      function addStep() {
+        var v = stepInput.value.trim();
+        if (!v) return;
+        var gs = copy(); var x = gs.find(function (y) { return y.id === g.id; });
+        x.steps = (x.steps || []).concat([{ t: v, done: false }]);
+        saveGoals(t, gs);
+      }
+      stepInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addStep(); } });
+      var del = el('button', { class: 'x', type: 'button', text: '×', 'aria-label': 'Remove goal ' + g.text, onclick: function () {
+        if (!confirm('Remove the goal "' + g.text + '"?')) return;
+        saveGoals(t, goals.filter(function (y) { return y.id !== g.id; }), 'Goal removed');
+      } });
+      return el('div', { class: 'goal' },
+        el('div', { class: 'goal-head' }, el('strong', { text: g.text }),
+          el('span', { class: 'hint', text: g.done ? 'Reached ' + fmtShort(g.done) : steps.length ? doneN + ' of ' + steps.length + ' steps' : '' })),
+        steps.length && !g.done ? el('div', { class: 'bar', role: 'img', 'aria-label': doneN + ' of ' + steps.length + ' steps done' }, el('i', { style: 'width:' + Math.round(100 * doneN / steps.length) + '%' })) : null,
+        g.done ? null : el('div', { class: 'checklist' }, steps.map(function (st, i) {
+          var cb = el('input', { type: 'checkbox', id: 'gs-' + g.id + '-' + i });
+          cb.checked = !!st.done;
+          cb.addEventListener('change', function () {
+            var gs = copy(); var x = gs.find(function (y) { return y.id === g.id; });
+            x.steps[i].done = cb.checked;
+            saveGoals(t, gs);
+          });
+          return el('div', { class: 'check-item' + (st.done ? ' done' : '') }, el('label', { class: 'check', for: 'gs-' + g.id + '-' + i }, cb, st.t));
+        })),
+        g.done ? null : el('div', { class: 'note-add' }, stepInput, el('button', { class: 'btn small', type: 'button', text: 'Add step', onclick: addStep })),
+        el('div', { class: 'entry-actions' },
+          g.done
+            ? el('button', { class: 'btn small', type: 'button', text: 'Not yet', onclick: function () {
+                var gs = copy(); gs.find(function (y) { return y.id === g.id; }).done = null; saveGoals(t, gs);
+              } })
+            : el('button', { class: 'btn small primary', type: 'button', text: 'Goal reached!', onclick: function () {
+                var gs = copy(); gs.find(function (y) { return y.id === g.id; }).done = iso(new Date()); saveGoals(t, gs, 'Way to go, ' + t.name + '!');
+              } }),
+          del));
+    }
+    var newGoal = el('input', { type: 'text', autocomplete: 'off', placeholder: 'New goal, e.g. lead the opening game', 'aria-label': 'New goal for ' + t.name });
+    function addGoal() {
+      var v = newGoal.value.trim();
+      if (!v) return;
+      saveGoals(t, copy().concat([{ id: newId(), text: v, steps: [], done: null, created: Date.now() }]), 'Goal added');
+    }
+    newGoal.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addGoal(); } });
+    return el('div', { style: 'display:grid;gap:8px' },
+      el('span', { class: 'lbl', text: 'Growth goals', style: 'font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)' }),
+      active.map(goalEl),
+      el('div', { class: 'note-add' }, newGoal, el('button', { class: 'btn small', type: 'button', text: 'Add goal', onclick: addGoal })),
+      reached.length ? el('details', {}, el('summary', { text: 'Goals reached (' + reached.length + ')' }), el('div', { class: 'log', style: 'margin-top:8px' }, reached.map(goalEl))) : null);
+  }
+
+  // Teen of the week: best leading rating at the latest rated Wednesday, ties go to the biggest jump.
+  function teenOfWeek() {
+    var rated = sortedWeeksAsc().filter(function (w) { return w.leads && Object.keys(w.leads).length; });
+    if (!rated.length) return null;
+    var w = rated[rated.length - 1];
+    var best = null;
+    Object.keys(w.leads).forEach(function (id) {
+      var t = teens.find(function (x) { return x.id === id; });
+      if (!t) return;
+      var before = sortedWeeksAsc().filter(function (x) { return x.date < w.date && x.leads && x.leads[id]; }).map(function (x) { return x.leads[id]; });
+      var prev = before.length ? avg(before.slice(-8)) : null;
+      var jump = prev == null ? 0 : w.leads[id] - prev;
+      var score = w.leads[id] * 10 + jump;
+      if (!best || score > best.score) best = { t: t, week: w, rating: w.leads[id], prev: prev, jump: jump, score: score };
+    });
+    return best;
+  }
+
+  function renderTotw() {
+    var box = $('tn-totw');
+    box.textContent = '';
+    var b = teenOfWeek();
+    if (!b) return;
+    var why = 'Led at ' + b.rating + '/5 (' + LEAD_LABELS[b.rating - 1] + ') on ' + fmtShort(b.week.date) +
+      (b.jump > 0.05 ? ', up from their ' + b.prev.toFixed(1) + ' average.' : '.');
+    var text = 'Hey ' + b.t.name.split(' ')[0] + '! You are Hangtime\'s Teen of the Week! 🎉 You did an ' +
+      (b.rating >= 5 ? 'outstanding' : b.rating >= 4 ? 'awesome' : 'great') + ' job leading on ' + fmtShort(b.week.date) +
+      (b.jump > 0.05 ? ', and you have really grown' : '') + '. Thanks for loving the kids so well. Keep it up!';
+    box.append(el('div', { class: 'card totw' },
+      el('span', { class: 'lbl', text: 'Teen of the week', style: 'font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-text)' }),
+      el('div', { class: 'big', text: b.t.name }),
+      el('p', { class: 'hint', text: why }),
+      el('div', { class: 'actions' }, el('button', { class: 'btn primary', type: 'button', text: 'Send them encouragement', onclick: function () { shareText(text, 'Encouragement copied. Paste it into a text.'); } }))));
+  }
+
+  async function shareText(text, copiedMsg) {
+    if (navigator.share) {
+      try { await navigator.share({ text: text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast(copiedMsg || 'Copied.'); }
+    catch (e) { toast('Could not share from this phone.'); }
+  }
+
   function renderBoard() {
+    renderTotw();
     var box = $('tn-board');
     box.textContent = '';
     if (!teens.length) return;
@@ -1250,6 +1421,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
         oneOnOne,
         t.focus ? el('p', {}, el('span', { class: 'lbl', text: 'Growing in' }), t.focus) : null,
         bdayLine(t.bday),
+        teenGoalsEl(t),
         teenResponsesEl(t),
         notes.length ? el('div', { class: 'notes' }, noteEl(notes[0])) : null,
         notes.length > 1 ? el('details', {}, el('summary', { text: 'Earlier notes (' + (notes.length - 1) + ')' }), el('div', { class: 'notes' }, notes.slice(1).map(noteEl))) : null,
@@ -1609,10 +1781,99 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   /* ---------- library: games ---------- */
   function showLib(which) {
-    $('lib-lessons').hidden = which !== 'lessons';
-    $('lib-games').hidden = which !== 'games';
-    $('lib-show-lessons').setAttribute('aria-pressed', which === 'lessons' ? 'true' : 'false');
-    $('lib-show-games').setAttribute('aria-pressed', which === 'games' ? 'true' : 'false');
+    ['lessons', 'series', 'games'].forEach(function (n) {
+      $('lib-' + n).hidden = which !== n;
+      $('lib-show-' + n).setAttribute('aria-pressed', which === n ? 'true' : 'false');
+    });
+  }
+  $('lib-show-series').addEventListener('click', function () { showLib('series'); });
+
+  /* lesson series: { title, weeks: [{ date, title, passage, word, point, lessonId }] } */
+  function seriesFor(date) {
+    for (var i = 0; i < series.length; i++) {
+      var ws = series[i].weeks || [];
+      for (var j = 0; j < ws.length; j++) if (ws[j].date === date) return { s: series[i], w: ws[j], n: j + 1, of: ws.length };
+    }
+    return null;
+  }
+
+  function renderSeries() {
+    var box = $('sr-log');
+    box.textContent = '';
+    if (!series.length) { box.append(el('div', { class: 'empty', text: 'No series yet. Create one above to map out a few Wednesdays at once.' })); return; }
+    series.slice().sort(function (a, b) { return ((b.weeks || [])[0] || {}).date > ((a.weeks || [])[0] || {}).date ? 1 : -1; }).forEach(function (sr) {
+      var ws = sr.weeks || [];
+      var del = el('button', { class: 'btn small danger', type: 'button', text: 'Delete' });
+      armDelete(del, function () { attempt(function () { return db.doc('series/' + sr.id).delete(); }, 'Series deleted'); });
+      function field(i, key, label, multi, ph) {
+        var inp = el(multi ? 'textarea' : 'input', multi ? { rows: 2, placeholder: ph || '' } : { type: 'text', autocomplete: 'off', placeholder: ph || '' });
+        inp.value = ws[i][key] || '';
+        inp.addEventListener('change', function () {
+          var copy = JSON.parse(JSON.stringify(ws));
+          copy[i][key] = inp.value.trim();
+          attempt(function () { return db.doc('series/' + sr.id).update({ weeks: copy }); });
+        });
+        return el('label', {}, label, inp);
+      }
+      box.append(el('article', { class: 'entry' },
+        el('div', { class: 'entry-top' }, el('h3', { text: sr.title }),
+          el('span', { class: 'pill', text: ws.length ? fmtShort(ws[0].date) + ' – ' + fmtShort(ws[ws.length - 1].date) : '' })),
+        ws.map(function (w, i) {
+          return el('div', { class: 'series-week' },
+            el('strong', { text: 'Week ' + (i + 1) + ' · ' + fmtDate(w.date) }),
+            el('div', { class: 'fields' }, field(i, 'title', 'Title', false), field(i, 'passage', 'Passage', false, 'e.g. Mark 4:35–41'), field(i, 'word', 'One-word main idea', false, 'e.g. Trust')),
+            field(i, 'point', 'Main point', true));
+        }),
+        el('p', { class: 'hint', text: 'Changes save when you tap out of a box.' }),
+        el('div', { class: 'entry-actions' }, del)));
+    });
+  }
+  $('sr-start').value = nextWednesday();
+  $('sr-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var title = $('sr-name').value.trim();
+    var start = $('sr-start').value;
+    if (!title) { toast('Name the series.'); return; }
+    if (!start) { toast('Pick the first Wednesday.'); return; }
+    var p = start.split('-').map(Number);
+    var weeksOut = [];
+    for (var i = 0; i < Number($('sr-count').value); i++) {
+      weeksOut.push({ date: iso(new Date(p[0], p[1] - 1, p[2] + 7 * i)), title: '', passage: '', word: '', point: '' });
+    }
+    var ok = await attempt(function () { return db.collection('series').doc().set({ title: title, weeks: weeksOut, created: Date.now() }); }, 'Series created');
+    if (ok) { $('sr-name').value = ''; }
+  });
+
+  function renderPlanSeries() {
+    var box = $('pl-series');
+    box.textContent = '';
+    if (!plan) return;
+    var f = seriesFor(plan.date);
+    if (!f) return;
+    var w = f.w;
+    var linked = w.lessonId && msgById(w.lessonId);
+    box.append(el('div', { class: 'resp' },
+      el('span', { class: 'lbl', text: f.s.title + ' · week ' + f.n + ' of ' + f.of }),
+      el('p', { text: [w.title, w.passage].filter(Boolean).join(' · ') || 'This week is not filled in yet. Fill it in under Library → Series.' }),
+      w.point ? el('p', { class: 'hint', text: w.point }) : null,
+      w.title && plan.lesson !== w.lessonId ? el('div', { class: 'actions' }, el('button', { class: 'btn small primary', type: 'button', text: linked ? 'Use this lesson' : 'Use this as the lesson', onclick: async function () {
+        var id = linked ? w.lessonId : null;
+        if (!id) {
+          var ref = db.collection('messages').doc();
+          var ok = await attempt(async function () {
+            await ref.set({ title: w.title, passage: w.passage || '', kind: 'Hangtime lesson', when: fmtShort(w.date), point: w.point || '', activity: '', notes: 'Part of the "' + f.s.title + '" series.', created: Date.now() });
+            var copy = JSON.parse(JSON.stringify(f.s.weeks));
+            copy[f.n - 1].lessonId = ref.id;
+            await db.doc('series/' + f.s.id).update({ weeks: copy });
+          });
+          if (!ok) return;
+          id = ref.id;
+        }
+        plan.lesson = id;
+        if (!plan.word && w.word) { plan.word = w.word; $('pl-word').value = w.word; }
+        renderPlanLesson(); renderPlanSeries(); touchPlan();
+        toast('Lesson set for ' + fmtShort(plan.date));
+      } })) : null));
   }
   $('lib-show-lessons').addEventListener('click', function () { showLib('lessons'); });
   $('lib-show-games').addEventListener('click', function () { showLib('games'); });
@@ -1805,6 +2066,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   $('pp-show-kids').addEventListener('click', function () { showPeople('kids'); });
 
   function renderKids() {
+    renderNames();
     var box = $('kd-log');
     box.textContent = '';
     var q = $('kd-search').value.trim().toLowerCase();
@@ -1826,11 +2088,64 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
             el('span', { class: 'pill', text: v.length + (v.length === 1 ? ' visit' : ' visits') }))),
         v.length ? el('p', { class: 'status-line', text: 'First came ' + fmtShort(v[0]) + ' · last came ' + fmtShort(v[v.length - 1]) }) : el('p', { class: 'hint', text: 'Not checked in yet.' }),
         missed >= 3 ? el('p', { class: 'status-line warn', text: 'Missed the last ' + missed + ' Wednesdays. Worth a check-in.' }) : null,
+        k.hint ? el('p', {}, el('span', { class: 'lbl', text: 'Memory hint' }), k.hint) : null,
         bdayLine(k.bday),
         k.notes ? el('p', {}, el('span', { class: 'lbl', text: 'Notes' }), k.notes) : null,
         el('div', { class: 'entry-actions' },
+          el('button', { class: k.known ? 'btn small' : 'btn small primary', type: 'button', text: k.known ? '✓ I know their name' : 'I know their name now',
+            onclick: function () { attempt(function () { return db.doc('kids/' + k.id).update({ known: !k.known }); }, k.known ? null : 'Name learned: ' + k.name); } }),
           el('button', { class: 'btn small', type: 'button', text: 'Edit', onclick: function () { loadKid(k); } }), del)));
     });
+  }
+
+  /* my goal: know every kid's name */
+  function renderNames() {
+    var box = $('kd-names');
+    box.textContent = '';
+    if (!kids.length) return;
+    var known = kids.filter(function (k) { return k.known; }).length;
+    var pct = Math.round(100 * known / kids.length);
+    var learning = kids.filter(function (k) { return !k.known; });
+    var card = el('div', { class: 'card' },
+      el('div', { class: 'log-head' }, el('h2', { text: 'My goal: know every kid\'s name' }), el('strong', { text: known + ' of ' + kids.length })),
+      el('div', { class: 'bar', role: 'img', 'aria-label': pct + ' percent of names known' }, el('i', { style: 'width:' + pct + '%' })),
+      learning.length ? el('p', { class: 'hint', text: 'Still learning: ' + learning.map(function (k) { return k.name; }).join(', ') }) : el('p', { class: 'status-line ok', text: 'You know every kid\'s name. Amazing!' }));
+    if (quiz) card.append(quizEl());
+    else if (kids.length >= 2) card.append(el('div', { class: 'actions' }, el('button', { class: 'btn', type: 'button', text: 'Practice names', onclick: startQuiz })));
+    box.append(card);
+  }
+  function startQuiz() {
+    // Names still being learned come first, then a few known ones to keep them fresh.
+    var learn = kids.filter(function (k) { return !k.known; });
+    var rest = kids.filter(function (k) { return k.known; }).sort(function () { return Math.random() - 0.5; }).slice(0, 3);
+    var deck = learn.sort(function () { return Math.random() - 0.5; }).concat(rest);
+    quiz = { deck: deck, i: 0, shown: false, right: 0 };
+    renderNames();
+  }
+  function quizEl() {
+    if (quiz.i >= quiz.deck.length) {
+      return el('div', { class: 'quiz' }, el('div', { class: 'big', text: 'Done!' }),
+        el('p', { text: 'You knew ' + quiz.right + ' of ' + quiz.deck.length + '.' }),
+        el('div', { class: 'actions', style: 'justify-content:center' }, el('button', { class: 'btn primary', type: 'button', text: 'Finish', onclick: function () { quiz = null; renderNames(); } })));
+    }
+    var k = quiz.deck[quiz.i];
+    var v = kidVisits(k.id);
+    var clues = [k.hint, k.grade ? k.grade + ' grade' : '', v.length ? 'Came ' + v.length + (v.length === 1 ? ' time' : ' times') + ', last ' + fmtShort(v[v.length - 1]) : ''].filter(Boolean);
+    function answer(knew) {
+      if (knew) quiz.right++;
+      quiz.i++; quiz.shown = false;
+      if (!!k.known !== knew) attempt(function () { return db.doc('kids/' + k.id).update({ known: knew }); });
+      else renderNames();
+    }
+    return el('div', { class: 'quiz' },
+      el('span', { class: 'hint', text: 'Card ' + (quiz.i + 1) + ' of ' + quiz.deck.length + '. Picture this kid. What is their name?' }),
+      el('p', { text: clues.length ? clues.join(' · ') : 'No clues yet. Add a memory hint when you edit this kid.' }),
+      quiz.shown ? el('div', { class: 'big', text: k.name }) : el('div', { class: 'actions', style: 'justify-content:center' },
+        el('button', { class: 'btn primary', type: 'button', text: 'Show name', onclick: function () { quiz.shown = true; renderNames(); } })),
+      quiz.shown ? el('div', { class: 'actions', style: 'justify-content:center' },
+        el('button', { class: 'btn primary', type: 'button', text: 'I knew it', onclick: function () { answer(true); } }),
+        el('button', { class: 'btn', type: 'button', text: 'Still learning', onclick: function () { answer(false); } })) : null,
+      el('button', { class: 'btn small', type: 'button', text: 'Stop', onclick: function () { quiz = null; renderNames(); } }));
   }
   $('kd-search').addEventListener('input', renderKids);
 
@@ -1839,7 +2154,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-title').textContent = 'Add a kid';
     $('kd-save').textContent = 'Add kid';
     $('kd-cancel').hidden = true;
-    ['kd-name', 'kd-grade', 'kd-notes', 'kd-bday'].forEach(function (id) { $(id).value = ''; });
+    ['kd-name', 'kd-grade', 'kd-notes', 'kd-bday', 'kd-hint'].forEach(function (id) { $(id).value = ''; });
   }
   function loadKid(k) {
     editingKid = k.id;
@@ -1850,6 +2165,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('kd-grade').value = k.grade || '';
     $('kd-notes').value = k.notes || '';
     $('kd-bday').value = k.bday || '';
+    $('kd-hint').value = k.hint || '';
     $('kd-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('kd-cancel').addEventListener('click', resetKidForm);
@@ -1857,7 +2173,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     ev.preventDefault();
     var name = $('kd-name').value.trim();
     if (!name) { toast('Enter a name.'); return; }
-    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim(), bday: $('kd-bday').value };
+    var data = { name: name, grade: $('kd-grade').value.trim(), notes: $('kd-notes').value.trim(), bday: $('kd-bday').value, hint: $('kd-hint').value.trim() };
     var ok;
     if (editingKid) {
       var id = editingKid;
@@ -1889,6 +2205,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     var hours = ws.reduce(function (s, w) { return s + (w.present || []).length * 2; }, 0);
     var meets = teens.reduce(function (s, t) { return s + (t.checkins || []).filter(function (d) { return d >= from; }).length; }, 0);
     var answered = prayers.filter(function (p) { return p.answered && p.answered >= from; }).length;
+    var recalled = ws.filter(function (w) { return w.recall; });
+    var mostRecall = recalled.filter(function (w) { return w.recall === 'Most'; }).length;
+    var goalsReached = teens.reduce(function (n, t) { return n + (t.goals || []).filter(function (g) { return g.done && g.done >= from; }).length; }, 0);
+    var known = kids.filter(function (k) { return k.known; }).length;
     var stats = [
       [ws.length, ws.length === 1 ? 'Wednesday logged' : 'Wednesdays logged'],
       [counted.length ? Math.round(visits / counted.length) : '—', 'kids on average'],
@@ -1897,7 +2217,10 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       [decisions, decisions === 1 ? 'faith decision' : 'faith decisions'],
       [hours, 'hours served by teens'],
       [meets, meets === 1 ? '1-on-1 with teens' : '1-on-1s with teens'],
-      [answered, answered === 1 ? 'prayer answered' : 'prayers answered']
+      [answered, answered === 1 ? 'prayer answered' : 'prayers answered'],
+      [recalled.length ? Math.round(100 * mostRecall / recalled.length) + '%' : '—', 'of weeks most kids remembered the main idea'],
+      [goalsReached, goalsReached === 1 ? 'teen goal reached' : 'teen goals reached'],
+      [kids.length ? known + '/' + kids.length : '—', 'kids\' names I know']
     ];
     var box = $('mn-stats');
     box.textContent = '';
@@ -1978,10 +2301,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     $('pl-games').value = plan.games || '';
     $('pl-status').textContent = plans[date] ? '' : 'New plan';
     $('pl-status').className = 'status-line';
+    var f = !plans[date] && seriesFor(date);
+    if (f && f.w.word && !plan.word) { plan.word = f.w.word; $('pl-word').value = f.w.word; }
     renderPlanLesson();
     renderPlanRoles();
     renderPlanChecklist();
     renderPlanGames();
+    renderPlanSeries();
   }
 
   function renderPlanGames() {
@@ -2094,6 +2420,14 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     var box = $('pl-remind');
     box.textContent = '';
     var parts = [];
+    var target = plan ? plan.date : nextWednesday();
+    var pw = prevWord(target);
+    if (pw) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Ask the kids' }), 'Last time\'s main idea was "' + pw.word + '" (' + fmtShort(pw.date) + '). See who remembers it, then log it when you save the week.'));
+    var totw = teenOfWeek();
+    if (totw) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Teen of the week' }), totw.t.name + ' (' + totw.rating + '/5 on ' + fmtShort(totw.week.date) + '). Send them encouragement from the People tab.'));
+    var learnNames = kids.filter(function (k) { return !k.known && kidVisits(k.id).length; })
+      .sort(function (a, b) { var av = kidVisits(a.id), bv = kidVisits(b.id); return av[av.length - 1] < bv[bv.length - 1] ? 1 : -1; }).slice(0, 5);
+    if (learnNames.length) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'Names to learn this week' }), learnNames.map(function (k) { return k.name + (k.hint ? ' (' + k.hint + ')' : ''); }).join(', ')));
     var last = sortedWeeksAsc().filter(function (w) { return w.improve; }).pop();
     if (last) parts.push(el('p', {}, el('span', { class: 'lbl', text: 'You said to change (' + fmtShort(last.date) + ')' }), last.improve));
     var due = teens.filter(function (t) { var c = t.checkins || []; return !c.length || daysSince(c[0]) > 30; });
@@ -2111,7 +2445,37 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     if (parts.length) box.append(el('div', { class: 'card remind' }, el('h2', { text: 'Before you plan' }), parts));
   }
 
-  $('pl-date').addEventListener('change', function () { if ($('pl-date').value) openPlan($('pl-date').value); });
+  $('pl-date').addEventListener('change', function () { if ($('pl-date').value) { openPlan($('pl-date').value); renderPlanReminders(); } });
+
+  // Nudges that depend on the day: finish the plan, open door check-in, log the week.
+  function renderNudge() {
+    var box = $('pl-nudge');
+    box.textContent = '';
+    var now = new Date();
+    var day = now.getDay(), mins = now.getHours() * 60 + now.getMinutes();
+    var msg = null, btn = null;
+    var lastWed = lastWednesday();
+    var logged = weeks.some(function (w) { return w.date === lastWed; });
+    if (day === 3 && mins >= 14 * 60 && mins < 17 * 60 + 15) {
+      msg = 'It\'s Hangtime today! Open door check-in as kids arrive.';
+      btn = el('button', { class: 'btn primary', type: 'button', text: 'Door check-in', onclick: openDoor });
+    } else if ((day === 3 && mins >= 17 * 60 + 15) || ((day === 4 || day === 5 || day === 6 || day === 0) && !logged && plans[lastWed])) {
+      if (!logged) {
+        msg = 'How did ' + fmtShort(lastWed) + ' go? Log it while it\'s fresh, and rate your teens.';
+        btn = el('button', { class: 'btn primary', type: 'button', text: 'Log the week', onclick: function () { showTab('weeks'); $('wk-date').value = lastWed; $('wk-date').dispatchEvent(new Event('change')); } });
+      }
+    } else if (day === 1 || day === 2 || (day === 3 && mins < 14 * 60)) {
+      var nw = nextWednesday();
+      var p = plans[nw] || {};
+      var missing = [];
+      if (!p.word) missing.push('main idea');
+      if (!p.lesson) missing.push('lesson');
+      if (!Object.keys(p.roles || {}).length) missing.push('teen jobs');
+      if (missing.length) msg = 'Wednesday is coming! Still to plan: ' + missing.join(', ') + '.';
+    }
+    if (msg) box.append(el('div', { class: 'card nudge' }, el('p', { text: msg }), btn ? el('div', { class: 'actions' }, btn) : null));
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) renderNudge(); });
   $('pl-word').addEventListener('input', function () { plan.word = $('pl-word').value.trim(); touchPlan(); });
   $('pl-arrive').addEventListener('input', function () { plan.arrive = $('pl-arrive').value; touchPlan(); });
   $('pl-games').addEventListener('input', function () { plan.games = $('pl-games').value; touchPlan(); });
@@ -2251,12 +2615,17 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     db.collection('weeks').onSnapshot(function (snap) {
       weeks = toRows(snap);
       loaded.weeks = true;
-      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry(); renderDoor(); renderGames(); renderPlanGames();
+      renderSummary(); renderWeeks(); renderTeens(); updateWeekHint(); renderBackup(); renderMsgs(); renderPlanReminders(); renderKids(); renderMinistry(); renderDoor(); renderGames(); renderPlanGames(); renderNudge();
     });
     db.collection('kids').onSnapshot(function (snap) {
       kids = toRows(snap).sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
       loaded.kids = true;
       renderKids(); renderWeekKids(); renderWeeks(); renderBackup(); renderPlanReminders(); renderMinistry(); renderDoor();
+    });
+    db.collection('series').onSnapshot(function (snap) {
+      series = toRows(snap);
+      loaded.series = true;
+      renderSeries(); renderPlanSeries();
     });
     db.collection('responses').onSnapshot(function (snap) {
       responses = toRows(snap);
@@ -2299,9 +2668,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       var first = !loaded.plans;
       loaded.plans = true;
       if (first) { openPlan(nextWednesday()); prefillFromPlan(); renderWeekTeens(); }
+      renderPlanReminders(); updateRecallQ(); renderNudge();
       renderWeeks(); renderBackup();
     });
     backupReminder();
+    renderNudge();
   }
 
   function renderAll() { renderSummary(); renderWeekTeens(); renderWeeks(); renderTeens(); renderChips(); renderMsgs(); }
