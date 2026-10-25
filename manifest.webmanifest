@@ -1,6 +1,6 @@
 {
-  "name": "Ministry Tracker",
-  "short_name": "Ministry",
+  "name": "Shepherd",
+  "short_name": "Shepherd",
   "description": "Plan and track your whole ministry: Sundays, Wednesday Hangtime, youth group, events and trips, and pastoral care.",
   "start_url": "./",
   "scope": "./",

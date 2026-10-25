@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ministry Tracker</title>
+<title>Shepherd</title>
 <meta name="theme-color" content="#13213C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ministry">
+<meta name="apple-mobile-web-app-title" content="Shepherd">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -277,7 +277,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
 <div class="wrap">
   <header>
-    <h1>Ministry Tracker</h1>
+    <h1>Shepherd</h1>
     <p class="sub" id="app-sub">Everything is saved on this phone only.</p>
   </header>
 
@@ -3846,13 +3846,13 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 
   $('bk-export').addEventListener('click', async function () {
     var payload = Object.assign({ app: 'hangtime-tracker', version: 1, exported: new Date().toISOString() }, store.dump());
-    var name = 'ministry-backup-' + iso(new Date()) + '.json';
+    var name = 'shepherd-backup-' + iso(new Date()) + '.json';
     var text = JSON.stringify(payload, null, 2);
     var file = null;
     try { file = new File([text], name, { type: 'application/json' }); } catch (e) { /* older browsers */ }
     var saved = false;
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Ministry backup' }); saved = true; }
+      try { await navigator.share({ files: [file], title: 'Shepherd backup' }); saved = true; }
       catch (e) { if (e && e.name === 'AbortError') return; }
     }
     if (!saved) {
