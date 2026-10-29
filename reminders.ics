@@ -9,27 +9,12 @@ DTSTAMP:20261025T000000Z
 DTSTART:20261027T190000
 DTEND:20261027T191500
 RRULE:FREQ=WEEKLY;BYDAY=TU
-SUMMARY:Finish the Hangtime plan
-DESCRIPTION:Main idea, lesson, teen jobs and games for tomorrow. Then tap Share plan with teens.
+SUMMARY:Give Hangtime teens their jobs
+DESCRIPTION:Open Hangtime, give each teen a job for tomorrow, then tap Text jobs to teens.
 URL:https://mattgartelman1-rgb.github.io/hangtime/
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Finish the Hangtime plan
-TRIGGER:PT0M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:hangtime-door@hangtime-tracker
-DTSTAMP:20261025T000000Z
-DTSTART:20261028T144500
-DTEND:20261028T151500
-RRULE:FREQ=WEEKLY;BYDAY=WE
-SUMMARY:Hangtime: door check-in
-DESCRIPTION:Kids arrive at 3:15. Open the Hangtime app and tap Door check-in.
-URL:https://mattgartelman1-rgb.github.io/hangtime/
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Hangtime: door check-in
+DESCRIPTION:Give Hangtime teens their jobs
 TRIGGER:PT0M
 END:VALARM
 END:VEVENT
@@ -39,12 +24,12 @@ DTSTAMP:20261025T000000Z
 DTSTART:20261028T173000
 DTEND:20261028T174500
 RRULE:FREQ=WEEKLY;BYDAY=WE
-SUMMARY:Log Hangtime and rate your teens
-DESCRIPTION:How did it go? Log the week, rate each teen, rate the games, and note if kids remembered the main idea.
+SUMMARY:Log who served and rate your teens
+DESCRIPTION:Open Hangtime, check off the teens who served and rate how each one led.
 URL:https://mattgartelman1-rgb.github.io/hangtime/
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Log Hangtime and rate your teens
+DESCRIPTION:Log who served and rate your teens
 TRIGGER:PT0M
 END:VALARM
 END:VEVENT

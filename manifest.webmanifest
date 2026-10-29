@@ -1,7 +1,7 @@
 {
-  "name": "Next Gen",
-  "short_name": "Next Gen",
-  "description": "Plan and track Wednesday Hangtime and youth group: nights, students, teens, lessons and follow-ups.",
+  "name": "Hangtime",
+  "short_name": "Hangtime",
+  "description": "Give your Hangtime teen volunteers their jobs, log who served, rate how they led, and help them grow.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
