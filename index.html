@@ -391,10 +391,17 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   })();
 
   /* ---------- sync through Firebase ----------
-     Fill in after creating the Firebase project. Until then the app keeps everything on this device.
+     Set to null to keep everything on this device only.
      This config is not a secret: the database rules only let each signed-in account read and write
      its own users/<uid>/... documents. */
-  var FIREBASE_CONFIG = null;
+  var FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyA5qSKm8lUjrG-vwklOs4rWDcXEpghWFGk',
+    authDomain: 'hangtime-a145b.firebaseapp.com',
+    projectId: 'hangtime-a145b',
+    storageBucket: 'hangtime-a145b.firebasestorage.app',
+    messagingSenderId: '782019202941',
+    appId: '1:782019202941:web:7716dc0d0a5a30c4898614'
+  };
   var FB_VERSION = '10.12.2';
   var localStore = store;
   var cloud = null; // { auth, user } once signed in
