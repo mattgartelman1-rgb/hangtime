@@ -190,6 +190,14 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 .x { border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
 .x:focus-visible { outline: 2px solid var(--accent); }
 
+.auth {
+  position: fixed; inset: 0; z-index: 30; background: var(--bg); overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 32px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 32px) max(16px, env(safe-area-inset-left, 0px));
+}
+.auth-inner { max-width: 420px; margin: 0 auto; display: grid; gap: 14px; }
+.auth h2 { font-size: 26px; margin: 0; }
+.linkish { border: 0; background: none; padding: 4px 0; color: var(--accent-text); font: 600 14px var(--font-body); cursor: pointer; justify-self: start; }
+
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40;
@@ -203,7 +211,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
 <div class="wrap">
   <header>
     <h1>Hangtime</h1>
-    <p class="sub">Your teen volunteer team. Wednesdays, 3:15–5:15pm. Everything is saved on this phone only.</p>
+    <p class="sub">Your teen volunteer team. Wednesdays, 3:15–5:15pm. <span id="sync-sub">Everything is saved on this phone only.</span></p>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
@@ -277,6 +285,11 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   </section>
 
   <section id="panel-more" class="panel" role="tabpanel" aria-labelledby="tab-more" hidden>
+    <div class="card" id="ac-card" hidden>
+      <h2>Sync</h2>
+      <p id="ac-status" class="status-line"></p>
+      <div class="actions" id="ac-actions"></div>
+    </div>
     <div class="card">
       <h2>Reminders</h2>
       <p>Add 2 weekly alerts to your iPhone Calendar: <strong>Tuesday 7pm</strong> give teens their jobs, and <strong>Wednesday 5:30pm</strong> log who served and rate them. You can change the times in Calendar afterward.</p>
@@ -285,7 +298,7 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
     </div>
     <div class="card">
       <h2>Save a backup</h2>
-      <p>Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.</p>
+      <p id="bk-intro">Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.</p>
       <p id="bk-status" class="status-line"></p>
       <div class="actions"><button class="btn primary" type="button" id="bk-export">Save backup file</button></div>
     </div>
@@ -296,10 +309,23 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       <div class="actions"><button class="btn" type="button" id="bk-import">Choose backup file</button></div>
     </div>
     <div class="card">
-      <h2>On this phone</h2>
+      <h2 id="bk-counts-h">On this phone</h2>
       <p id="bk-counts" class="status-line"></p>
     </div>
   </section>
+</div>
+<div id="auth" class="auth" role="dialog" aria-modal="true" aria-labelledby="auth-title" hidden>
+  <form id="auth-form" class="auth-inner" novalidate>
+    <h2 id="auth-title">Sign in to sync</h2>
+    <p class="hint" id="auth-sub">Sign in on each phone or iPad you use, and your teens, jobs and logs stay the same on all of them.</p>
+    <label for="auth-email">Email<input type="email" id="auth-email" autocomplete="username" inputmode="email" autocapitalize="off"></label>
+    <label for="auth-pass">Password<input type="password" id="auth-pass" autocomplete="current-password" minlength="6"></label>
+    <p class="status-line warn" id="auth-err" hidden></p>
+    <button class="btn primary big" type="submit" id="auth-go">Sign in</button>
+    <button class="linkish" type="button" id="auth-mode">New here? Create an account</button>
+    <button class="linkish" type="button" id="auth-forgot">Forgot password?</button>
+    <button class="btn" type="button" id="auth-skip">Not now, keep using this device only</button>
+  </form>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
@@ -363,6 +389,176 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
       }
     };
   })();
+
+  /* ---------- sync through Firebase ----------
+     Fill in after creating the Firebase project. Until then the app keeps everything on this device.
+     This config is not a secret: the database rules only let each signed-in account read and write
+     its own users/<uid>/... documents. */
+  var FIREBASE_CONFIG = null;
+  var FB_VERSION = '10.12.2';
+  var localStore = store;
+  var cloud = null; // { auth, user } once signed in
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = src; sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  }
+  function loadFirebase() {
+    var base = 'https://www.gstatic.com/firebasejs/' + FB_VERSION + '/';
+    return loadScript(base + 'firebase-app-compat.js').then(function () {
+      return Promise.all([loadScript(base + 'firebase-auth-compat.js'), loadScript(base + 'firebase-firestore-compat.js')]);
+    });
+  }
+
+  // Same interface as the local store. Reads come from a cache kept current by live listeners;
+  // writes update the cache at once and go to Firestore in the background (queued while offline).
+  function cloudStore(fs, uid) {
+    var root = fs.collection('users').doc(uid);
+    var state = {}, listeners = {};
+    COLLECTIONS.forEach(function (c) { state[c] = {}; listeners[c] = []; });
+    function rows(c) {
+      return Object.keys(state[c]).map(function (id) { var o = JSON.parse(JSON.stringify(state[c][id])); o.id = id; return o; });
+    }
+    function notify(c) { listeners[c].forEach(function (cb) { cb(rows(c)); }); }
+    function clean(data) { var d = JSON.parse(JSON.stringify(data)); delete d.id; return d; }
+    function failed(e) {
+      toast(e && e.code === 'permission-denied' ? 'Not allowed to save. Try signing out and back in.' : 'Could not sync a change. It will retry when you are online.');
+    }
+    function put(c, id, data) {
+      state[c] = state[c] || {};
+      state[c][id] = data;
+      if (listeners[c]) notify(c);
+      root.collection(c).doc(id).set(data).catch(failed);
+    }
+    COLLECTIONS.forEach(function (c) {
+      root.collection(c).onSnapshot(function (snap) {
+        state[c] = {};
+        snap.forEach(function (d) { state[c][d.id] = d.data(); });
+        notify(c);
+      }, failed);
+    });
+    return {
+      cloud: true,
+      set: function (c, id, data) { put(c, id, clean(data)); },
+      // Shallow merge like the local store: fields given replace those fields whole.
+      update: function (c, id, data) { put(c, id, Object.assign({}, state[c][id] || {}, clean(data))); },
+      remove: function (c, id) {
+        delete state[c][id];
+        notify(c);
+        root.collection(c).doc(id).delete().catch(failed);
+      },
+      get: function (c, id) { return state[c] && state[c][id] ? JSON.parse(JSON.stringify(state[c][id])) : null; },
+      watch: function (c, cb) { listeners[c].push(cb); cb(rows(c)); },
+      dump: function () { return JSON.parse(JSON.stringify(state)); },
+      merge: function (incoming) {
+        var writes = [];
+        Object.keys(incoming).forEach(function (c) {
+          Object.keys(incoming[c] || {}).forEach(function (id) {
+            var d = clean(incoming[c][id]);
+            if (state[c]) state[c][id] = d;
+            writes.push([c, id, d]);
+          });
+        });
+        // Firestore batches hold up to 500 writes.
+        for (var i = 0; i < writes.length; i += 400) {
+          var batch = fs.batch();
+          writes.slice(i, i + 400).forEach(function (w) { batch.set(root.collection(w[0]).doc(w[1]), w[2]); });
+          batch.commit().catch(failed);
+        }
+        COLLECTIONS.forEach(notify);
+      }
+    };
+  }
+
+  /* sign-in screen */
+  var authCreate = false;
+  function showAuth(sub) {
+    $('auth').hidden = false;
+    document.body.style.overflow = 'hidden';
+    if (sub) $('auth-sub').textContent = sub;
+    setAuthMode(false);
+  }
+  function hideAuth() { $('auth').hidden = true; document.body.style.overflow = ''; }
+  function setAuthMode(create) {
+    authCreate = create;
+    $('auth-title').textContent = create ? 'Create your account' : 'Sign in to sync';
+    $('auth-go').textContent = create ? 'Create account' : 'Sign in';
+    $('auth-mode').textContent = create ? 'Already have an account? Sign in' : 'New here? Create an account';
+    $('auth-pass').setAttribute('autocomplete', create ? 'new-password' : 'current-password');
+    $('auth-err').hidden = true;
+  }
+  function authError(e) {
+    var c = (e && e.code) || '';
+    var msg = c.indexOf('invalid-email') > -1 ? 'That email address does not look right.'
+      : c.indexOf('weak-password') > -1 ? 'Use a password with at least 6 characters.'
+      : c.indexOf('email-already-in-use') > -1 ? 'There is already an account with that email. Tap "Already have an account? Sign in".'
+      : c.indexOf('invalid-credential') > -1 || c.indexOf('wrong-password') > -1 || c.indexOf('user-not-found') > -1 ? 'Email or password is not right.'
+      : c.indexOf('network') > -1 ? 'No internet connection. Connect and try again.'
+      : c.indexOf('too-many-requests') > -1 ? 'Too many tries. Wait a few minutes and try again.'
+      : 'Could not sign in. Try again.';
+    $('auth-err').textContent = msg;
+    $('auth-err').hidden = false;
+  }
+  $('auth-mode').addEventListener('click', function () { setAuthMode(!authCreate); });
+  $('auth-skip').addEventListener('click', hideAuth);
+  $('auth-forgot').addEventListener('click', function () {
+    var email = $('auth-email').value.trim();
+    if (!email) { $('auth-err').textContent = 'Type your email above first.'; $('auth-err').hidden = false; return; }
+    cloud.auth.sendPasswordResetEmail(email).then(function () { toast('Check your email for a link to reset your password.'); }, authError);
+  });
+  $('auth-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (!cloud) return;
+    var email = $('auth-email').value.trim(), pass = $('auth-pass').value;
+    if (!email || !pass) { $('auth-err').textContent = 'Enter your email and password.'; $('auth-err').hidden = false; return; }
+    $('auth-go').disabled = true;
+    (authCreate ? cloud.auth.createUserWithEmailAndPassword(email, pass) : cloud.auth.signInWithEmailAndPassword(email, pass))
+      .then(function () { location.reload(); }, function (e) { $('auth-go').disabled = false; authError(e); });
+  });
+
+  function renderAccount() {
+    var card = $('ac-card');
+    card.hidden = !FIREBASE_CONFIG;
+    if (!FIREBASE_CONFIG) return;
+    var acts = $('ac-actions');
+    acts.textContent = '';
+    if (cloud && cloud.user) {
+      $('ac-status').textContent = 'Syncing as ' + cloud.user.email + '. Changes show up on your other devices, and saving works offline too.';
+      $('ac-status').className = 'status-line ok';
+      acts.append(el('button', { class: 'btn', type: 'button', text: 'Sign out', onclick: function () {
+        if (confirm('Sign out on this device? Your entries stay safe in your account.')) cloud.auth.signOut().then(function () { location.reload(); });
+      } }));
+    } else {
+      $('ac-status').textContent = cloud ? 'Not signed in. Entries are saved on this device only.' : 'Sync needs internet the first time. Entries are saved on this device only for now.';
+      $('ac-status').className = 'status-line warn';
+      if (cloud) acts.append(el('button', { class: 'btn primary', type: 'button', text: 'Sign in to sync', onclick: function () { showAuth(); } }));
+    }
+  }
+
+  // The first time an account is used on a device, offer to copy what this device already has into it.
+  function offerCopy(uid) {
+    var key = 'hangtime-copied-' + uid;
+    try { if (localStorage.getItem(key)) return; } catch (e) { return; }
+    var local = localStore.dump();
+    var nT = Object.keys(local.teens || {}).length, nW = Object.keys(local.weeks || {}).length, nP = Object.keys(local.plans || {}).length;
+    try { localStorage.setItem(key, 'asked'); } catch (e) { /* ask again next time */ }
+    if (!nT && !nW && !nP) return;
+    var what = [nT ? plural(nT, 'teen', 'teens') : '', nW ? plural(nW, 'logged week', 'logged weeks') : '', nP ? plural(nP, 'Wednesday of jobs', 'Wednesdays of jobs') : ''].filter(Boolean).join(', ');
+    if (!confirm('This device has ' + what + ' saved on it. Copy them into your account so they sync to your other devices?\n\nAnything with the same date or teen is replaced by this device\'s copy.')) return;
+    store.merge(local);
+    toast('Copied into your account');
+  }
+
+  function syncText(on) {
+    $('sync-sub').textContent = on ? 'Synced to your account.' : 'Everything is saved on this phone only.';
+    $('bk-intro').textContent = on
+      ? 'Your entries sync to your account. A backup file is still a good extra copy: save one now and then and keep it in Files, iCloud Drive or an email to yourself.'
+      : 'Your entries live only on this phone. Save a backup file now and then, and keep it somewhere safe like Files, iCloud Drive, Google Drive or an email to yourself.';
+    $('bk-counts-h').textContent = on ? 'In your account' : 'On this phone';
+  }
 
   // Ask the phone not to clear this app's storage when space runs low.
   if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(function () {}); }
@@ -1044,6 +1240,8 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   });
 
   /* ---------- start ---------- */
+  function bind(s) {
+  store = s;
   store.watch('teens', function (rows) {
     teens = rows.sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); });
     renderTeens(); renderRoles(); renderLogTeens(); renderWeeks(); renderJobReminders(); renderNudge(); renderBackup();
@@ -1055,13 +1253,52 @@ details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var
   store.watch('plans', function (rows) {
     plans = {};
     rows.forEach(function (p) { plans[p.id] = p; });
+    // Show jobs changed on another device, unless they are being edited here right now.
+    var saved = plan && plans[plan.date];
+    if (saved && !planDirty && !$('jb-form').contains(document.activeElement) &&
+        (JSON.stringify(saved.roles || {}) !== JSON.stringify(plan.roles) || (saved.teenNote || '') !== plan.teenNote)) openPlan(plan.date);
     renderTeens(); renderNudge(); renderBackup();
   });
+  }
 
-  openPlan(nextWednesday());
-  resetLogForm();
-  renderJobReminders();
-  backupReminder();
+  function startApp(s) {
+    bind(s);
+    syncText(!!s.cloud);
+    renderAccount();
+    openPlan(nextWednesday());
+    resetLogForm();
+    renderJobReminders();
+    if (!s.cloud) backupReminder();
+  }
+
+  if (!FIREBASE_CONFIG) {
+    startApp(localStore);
+  } else {
+    loadFirebase().then(function () {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var fs = firebase.firestore();
+      // Keep a copy on the device so the app opens and saves offline (e.g. spotty church Wi-Fi).
+      return fs.enablePersistence({ synchronizeTabs: true }).catch(function () {}).then(function () {
+        cloud = { auth: firebase.auth(), user: null, fs: fs };
+        var started = false;
+        cloud.auth.onAuthStateChanged(function (user) {
+          if (started) return;
+          started = true;
+          cloud.user = user;
+          if (user) {
+            startApp(cloudStore(fs, user.uid));
+            setTimeout(function () { offerCopy(user.uid); }, 1500);
+          } else {
+            startApp(localStore);
+            showAuth();
+          }
+        });
+      });
+    }).catch(function () {
+      // No internet the first time (sync code not downloaded yet): carry on with this device's copy.
+      startApp(localStore);
+    });
+  }
 
   var startTab = (location.hash || '').replace('#', '');
   if (TABS.indexOf(startTab) < 0) { try { startTab = localStorage.getItem(TAB_KEY) || ''; } catch (e) { /* not critical */ } }

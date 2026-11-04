@@ -1,5 +1,5 @@
 // Keeps the app working offline. Bump VERSION whenever the app files change so phones pick up the update.
-var VERSION = 'hangtime-v14';
+var VERSION = 'hangtime-v15';
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
@@ -24,8 +24,8 @@ self.addEventListener('fetch', function (e) {
     }).catch(function () { return caches.match('index.html'); }));
     return;
   }
-  // Everything else (icons, fonts): use the saved copy, and save new ones as they load.
-  if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
+  // Everything else (icons, fonts, the Firebase sync code): use the saved copy, and save new ones as they load.
+  if (url.origin === location.origin || /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname) || url.hostname === 'www.gstatic.com') {
     e.respondWith(caches.match(e.request).then(function (hit) {
       return hit || fetch(e.request).then(function (res) {
         if (res.ok || res.type === 'opaque') {
